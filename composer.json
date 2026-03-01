@@ -1,0 +1,20 @@
+{
+  "name": "orbe/api",
+  "version": "1.0.0",
+  "description": "API RESTful",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "scripts": {
+    "start": "php -S localhost:8001 -t public"
+  },
+  "config": {
+    "process-timeout": 0
+  }
+}   
