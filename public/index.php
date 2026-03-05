@@ -2,10 +2,14 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+
 use App\Core\Database;
 use App\Core\Router;
 use App\Controllers\AuthController;
 // use App\Models\User;
+use App\Core\Env;
+
+Env::load(__DIR__ . '/../.env');
 
 $conn = Database::getConnection();
 
