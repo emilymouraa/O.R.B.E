@@ -28,8 +28,9 @@ $router->add('POST', '/login', function () use ($authController) {
     $authController->login();
 });
 
-$router->add('GET', '/logout', function () use ($authController) {
-    $authController->logout();
+$router->add('POST', '/logout', function () {
+    $controller = new App\Controllers\AuthController();
+    $controller->logout();
 });
 
 $router->add('GET', '/dashboard', function () {

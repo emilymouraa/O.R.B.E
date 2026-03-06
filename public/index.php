@@ -17,7 +17,8 @@ $router = new Router();
 require __DIR__ . '/../src/Routes/web.php';
 
 $router->add('GET', '/', function () {
-    echo json_encode(['message' => 'ORBE iniciado com sucesso!']);
+    header('Location: /login');
+    exit;
 });
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
