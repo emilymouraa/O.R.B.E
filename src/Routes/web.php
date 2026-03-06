@@ -7,11 +7,37 @@ use App\Services\AuthService;
 
 $userModel = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
+
 $authService = new AuthService($userModel, $servidorModel);
 
 $authController = new AuthController($authService);
 
-$router->add('GET', '/login', [$authController, 'showLogin']);
-$router->add('GET', '/register', [$authController, 'showRegister']);
+$router->add('GET', '/login', function () use ($authController) {
+    $authController->loginForm();
+});
 
-$router->add('POST', '/register', [$authController, 'register']);
+$router->add('GET', '/register', function () use ($authController) {
+    $authController->showRegister();
+});
+
+$router->add('POST', '/register', function () use ($authController) {
+    $authController->register();
+});
+
+$router->add('POST', '/login', function () use ($authController) {
+    $authController->login();
+});
+
+$router->add('GET', '/logout', function () use ($authController) {
+    $authController->logout();
+});
+
+$router->add('GET', '/dashboard', function () {
+
+    if (!isset($_SESSION['user'])) {
+        header('Location: /login');
+        exit;
+    }
+
+    require __DIR__ . '/../Views/dashboard/home.php';
+});

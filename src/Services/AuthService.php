@@ -6,6 +6,7 @@ use App\Models\UserModel;
 use App\Models\ServidorModel;
 
 class AuthService {
+
     private UserModel $userModel;
     private ServidorModel $servidorModel;
 
@@ -15,6 +16,7 @@ class AuthService {
     }
 
     public function register(string $ra, string $email, string $password): array {
+
         if (!str_ends_with($email, '@prf.govmg.com.br')) {
             return ['error' => 'Domínio inválido'];
         }
@@ -44,6 +46,36 @@ class AuthService {
             'password' => $hash,
             'role' => 'user'
         ]);
+
+        return ['success' => true];
+    }
+
+    public function login(string $email, string $password): array {
+
+        $user = $this->userModel->findByEmail($email);
+
+        if (!$user) {
+            return ['error' => 'Usuário não encontrado'];
+        }
+
+        if (!$user['ativo']) {
+            return ['error' => 'Usuário desativado'];
+        }
+
+        if (!password_verify($password, $user['password'])) {
+            return ['error' => 'Senha inválida'];
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'nome' => $user['nome'],
+            'email' => $user['email'],
+            'role' => $user['role']
+        ];
 
         return ['success' => true];
     }

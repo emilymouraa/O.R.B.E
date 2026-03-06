@@ -4,15 +4,25 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Services\AuthService;
+use App\Models\UserModel;
+use App\Models\ServidorModel;
+use App\Core\Database;
 
 class AuthController extends Controller {
+
     private AuthService $authService;
 
-    public function __construct(AuthService $authService) {
-        $this->authService = $authService;
+    public function __construct() {
+
+        $db = Database::getConnection();
+
+        $userModel = new UserModel($db);
+        $servidorModel = new ServidorModel($db);
+
+        $this->authService = new AuthService($userModel, $servidorModel);
     }
 
-    public function showLogin() {
+    public function loginForm() {
         $this->view('auth/login');
     }
 
@@ -21,6 +31,7 @@ class AuthController extends Controller {
     }
 
     public function register() {
+
         $ra = $_POST['ra'] ?? '';
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
@@ -28,10 +39,45 @@ class AuthController extends Controller {
         $result = $this->authService->register($ra, $email, $password);
 
         if (isset($result['error'])) {
-            echo $result['error'];
+
+            $error = $result['error'];
+
+            require __DIR__ . '/../Views/auth/register.php';
             return;
         }
 
-        $this->redirect('/login');
+        header('Location: /login');
+        exit;
+    }
+
+    public function login() {
+
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        $result = $this->authService->login($email, $password);
+
+        if (isset($result['error'])) {
+
+            $error = $result['error'];
+
+            require __DIR__ . '/../Views/auth/login.php';
+            return;
+        }
+
+        header('Location: /dashboard');
+        exit;
+    }
+
+    public function logout() {
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        session_destroy();
+
+        header('Location: /login');
+        exit;
     }
 }
