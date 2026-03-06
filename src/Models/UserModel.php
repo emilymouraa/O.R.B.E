@@ -5,12 +5,10 @@ namespace App\Models;
 use App\Core\Model;
 use PDO;
 
-class UserModel extends Model
-{
+class UserModel extends Model {
     protected string $table = 'users';
 
-    public function findByEmail(string $email): ?array
-    {
+    public function findByEmail(string $email): ?array {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE email = :email LIMIT 1");
         $stmt->execute(['email' => $email]);
 
@@ -19,8 +17,7 @@ class UserModel extends Model
         return $user ?: null;
     }
 
-    public function findByServidor(int $servidor_id): ?array
-    {
+    public function findByServidor(int $servidor_id): ?array {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE servidor_id = :id LIMIT 1");
         $stmt->execute(['id' => $servidor_id]);
 
@@ -29,8 +26,7 @@ class UserModel extends Model
         return $user ?: null;
     }
 
-    public function create(array $data): bool
-    {
+    public function create(array $data): bool {
         $stmt = $this->db->prepare("
             INSERT INTO {$this->table}
             (servidor_id, nome, email, password, role)
