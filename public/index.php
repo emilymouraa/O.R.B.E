@@ -2,22 +2,17 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-
 use App\Core\Database;
 use App\Core\Router;
-use App\Controllers\AuthController;
-// use App\Models\User;
 use App\Core\Env;
 
 Env::load(__DIR__ . '/../.env');
 
 $conn = Database::getConnection();
 
-// $userModel = new User($conn);
-
-// $authController = new AuthController($userModel);
-
 $router = new Router();
+
+require __DIR__ . '/../src/Routes/web.php';
 
 $router->add('GET', '/', function () {
     echo json_encode(['message' => 'ORBE iniciado com sucesso!']);
