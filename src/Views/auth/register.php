@@ -1,80 +1,80 @@
 <!DOCTYPE html>
-    <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <title>Cadastro - ORBE</title>
-        <style>
-            body{
-                font-family: Arial;
-                background: linear-gradient(135deg,#667eea,#764ba2);
-                height:100vh;
-                display:flex;
-                justify-content:center;
-                align-items:center;
-            }
-            .container{
-                background:white;
-                padding:40px;
-                border-radius:10px;
-                width:320px;
-                box-shadow:0 8px 20px rgba(0,0,0,0.2);
-            }
-            h2{
-                text-align:center;
-                margin-bottom:20px;
-            }
-            input{
-                width:100%;
-                padding:10px;
-                margin-bottom:15px;
-                border-radius:5px;
-                border:1px solid #ccc;
-            }
-            button{
-                width:100%;
-                padding:10px;
-                background:#667eea;
-                border:none;
-                color:white;
-                font-weight:bold;
-                border-radius:5px;
-                cursor:pointer;
-            }
-            button:hover{
-                background:#5a67d8;
-            }
-            .error{
-                color:red;
-                margin-bottom:10px;
-                text-align:center;
-            }
-            .link{
-                text-align:center;
-                margin-top:15px;
-            }
-            .link a{
-                color:#667eea;
-                text-decoration:none;
-                font-size:14px;
-            }
-        </style>
-    </head>
+<html lang="pt-br" data-theme="light">
 
-    <body>
-        <div class="container">
-            <h2>Criar Conta</h2>
-            <?php if(isset($error)): ?>
-            <div class="error"><?= $error ?></div>
-            <?php endif; ?>
-            <form method="POST" action="/register">
-                <input type="text" name="ra" placeholder="RA" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Senha" required>
-                <button type="submit">Cadastrar</button>
-            </form>
-            <div class="link">
-                <a href="/login">Já possui conta? Fazer login</a>
-            </div>
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro - ORBE</title>
+
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-box">
+
+        <div class="logo-container">
+            <img src="/assets/images/orbe_logo.jpeg" alt="ORBE Logo" class="logo">
         </div>
-    </body>
+
+        <h2>Criar Conta</h2>
+
+        <?php if (!empty($error)): ?>
+            <div class="error">
+                <?= $error ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="/register">
+
+            <div class="form-group">
+                <label>Nome</label>
+                <input 
+                    type="text" 
+                    name="name" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input 
+                    type="email" 
+                    name="email" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Senha</label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn-primary">
+                Criar conta
+            </button>
+
+        </form>
+
+        <p class="register-link">
+            Já possui conta?
+            <a href="/login">Fazer login</a>
+        </p>
+
+    </div>
+
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">
+    🌙
+</button>
+
+<script src="/assets/js/app.js"></script>
+
+</body>
 </html>
