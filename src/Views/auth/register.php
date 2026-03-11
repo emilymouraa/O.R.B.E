@@ -29,6 +29,15 @@
         <form method="POST" action="/register">
 
             <div class="form-group">
+                <label>RA</label>
+                <input 
+                    type="text"
+                    name="ra"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
                 <label>Nome</label>
                 <input 
                     type="text" 
