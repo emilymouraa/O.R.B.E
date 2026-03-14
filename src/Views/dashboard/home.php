@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
     <html lang="pt-br">
     <head>
@@ -41,6 +42,14 @@
         <div class="card">
         <h2>Bem vindo ao ORBE</h2>
         <p>Login realizado com sucesso.</p>
+
+        <?php if($_SESSION['user']['role'] === 'admin'): ?>
+
+        <a href="/register">
+            <button>Cadastrar Usuário</button>
+        </a>
+
+        <?php endif; ?>
         <form method="POST" action="/logout">
         <button type="submit">Sair</button>
         </form>
