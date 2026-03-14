@@ -52,10 +52,10 @@ class AuthController extends Controller {
 
     public function login() {
 
-        $email = $_POST['email'] ?? '';
+        $ra = $_POST['ra'] ?? '';
         $password = $_POST['password'] ?? '';
 
-        $result = $this->authService->login($email, $password);
+        $result = $this->authService->login($ra, $password);
 
         if (isset($result['error'])) {
 
