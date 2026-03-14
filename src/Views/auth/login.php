@@ -29,10 +29,10 @@
         <form method="POST" action="/login">
 
             <div class="form-group">
-                <label>Email</label>
+                <label>RA</label>
                 <input 
-                    type="email" 
-                    name="email" 
+                    type="text" 
+                    name="ra" 
                     required
                 >
             </div>

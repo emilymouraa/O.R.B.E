@@ -18,23 +18,29 @@ class AuthService {
     public function register(string $ra, string $email, string $password): array {
 
         if (!str_ends_with($email, '@prf.govmg.com.br')) {
-            return ['error' => 'Domínio inválido'];
+            return ['error' => 'Domínio de email inválido'];
         }
 
         if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $password)) {
-            return ['error' => 'Senha deve ter 8 caracteres, maiúscula, minúscula e número'];
+            return ['error' => 'Senha deve ter 8 caracteres, com maiúscula, minúscula e número'];
         }
 
-        $servidor = $this->servidorModel->findByRA($ra);
+        $servidor = $this->servidorModel->findByRa($ra);
 
         if (!$servidor) {
             return ['error' => 'RA não encontrado'];
         }
 
-        $userExistente = $this->userModel->findByServidor($servidor['id']);
+        $userExistente = $this->userModel->findByServidorId($servidor['id']);
 
         if ($userExistente) {
             return ['error' => 'Usuário já cadastrado'];
+        }
+
+        $emailExistente = $this->userModel->findByEmail($email);
+
+        if ($emailExistente) {
+            return ['error' => 'Email já cadastrado'];
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -50,31 +56,33 @@ class AuthService {
         return ['success' => true];
     }
 
-    public function login(string $email, string $password): array {
+    public function login(string $ra, string $password): array {
 
-        $user = $this->userModel->findByEmail($email);
+        $servidor = $this->servidorModel->findByRa($ra);
+
+        if (!$servidor) {
+            return ['error' => 'RA não encontrado'];
+        }
+
+        $user = $this->userModel->findByServidorId($servidor['id']);
 
         if (!$user) {
-            return ['error' => 'Usuário não encontrado'];
+            return ['error' => 'Usuário não possui acesso ao sistema'];
         }
 
         if (!$user['ativo']) {
-            return ['error' => 'Usuário desativado'];
+            return ['error' => 'Usuário inativo'];
         }
 
         if (!password_verify($password, $user['password'])) {
             return ['error' => 'Senha inválida'];
         }
 
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
         $_SESSION['user'] = [
             'id' => $user['id'],
             'nome' => $user['nome'],
-            'email' => $user['email'],
-            'role' => $user['role']
+            'role' => $user['role'],
+            'servidor_id' => $servidor['id']
         ];
 
         return ['success' => true];
