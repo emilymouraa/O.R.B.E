@@ -1,3 +1,2 @@
-# O.R.B.E
+# O.R.B.E/ │ ├── public/ │ ├── index.php │ ├── assets/ │ │ ├── css/ │ │ │ └── style.css │ │ ├── js/ │ │ │ └── app.js │ │ └── img/ │ ├── src/ │ │ │ ├── Core/ │ │ ├── Router.php │ │ ├── Controller.php │ │ ├── Model.php │ │ ├── Database.php │ │ └── Env.php │ │ │ ├── Controllers/ │ │ ├── AuthController.php │ │ └── UserController.php │ │ │ ├── Models/ │ │ ├── UserModel.php │ │ ├── ServidorModel.php │ │ └── LogModel.php │ │ │ ├── Middleware/ │ │ ├── AuthMiddleware.php │ │ └── RoleMiddleware.php │ │ │ ├── Services/ │ │ └── AuthService.php │ │ │ ├── Views/ │ │ ├── layout/ │ │ │ ├── header.php │ │ │ └── footer.php │ │ │ │ │ ├── auth/ │ │ │ ├── login.php │ │ │ └── register.php │ │ │ │ │ └── dashboard/ │ │ └── home.php │ │ │ ├── Helpers/ │ │ └── Response.php │ │ │ └── Routes/ │ └── web.php │ ├── .env ├── .gitignore ├── composer.json └── README.md
 
-# Óia o Daniel fazendo arte aqui!
