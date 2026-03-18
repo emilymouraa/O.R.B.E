@@ -57,6 +57,9 @@ class AuthService {
     }
 
     public function login(string $ra, string $password): array {
+        //var_dump($ra);
+        //die();
+
 
         $servidor = $this->servidorModel->findByRa($ra);
 
@@ -85,6 +88,10 @@ class AuthService {
             'servidor_id' => $servidor['id']
         ];
 
-        return ['success' => true];
+        return [
+            'id' => $user['id'],
+            'name' => $user['nome'],
+            'role' => $user['role']
+        ];
     }
 }

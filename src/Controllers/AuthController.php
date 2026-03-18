@@ -59,11 +59,13 @@ class AuthController extends Controller {
     }
 
     public function login() {
+        //var_dump($_POST);
+        //die();
 
-        $email = $_POST['email'] ?? '';
+        $ra = $_POST['ra'] ?? '';
         $password = $_POST['password'] ?? '';
 
-        $result = $this->authService->login($email, $password);
+        $result = $this->authService->login($ra, $password);
 
         if (isset($result['error'])) {
 
@@ -72,6 +74,7 @@ class AuthController extends Controller {
             require __DIR__ . '/../Views/auth/login.php';
             return;
         }
+
         session_start();
 
         $_SESSION['user'] = [
@@ -79,6 +82,7 @@ class AuthController extends Controller {
             'name' => $result['name'],
             'role' => $result['role']
         ];
+
         header('Location: /dashboard');
         exit;
     }

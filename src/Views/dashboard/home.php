@@ -1,4 +1,8 @@
-<?php session_start(); ?>
+<?php 
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+ ?>
 <!DOCTYPE html>
     <html lang="pt-br">
     <head>
@@ -43,7 +47,7 @@
         <h2>Bem vindo ao ORBE</h2>
         <p>Login realizado com sucesso.</p>
 
-        <?php if($_SESSION['user']['role'] === 'admin'): ?>
+        <?php if(isset($_SESSION['user']) && $_SESSION['user']['role'] === 'admin'): ?>
 
         <a href="/register">
             <button>Cadastrar Usuário</button>

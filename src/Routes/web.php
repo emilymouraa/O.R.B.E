@@ -17,10 +17,35 @@ $router->add('GET', '/login', function () use ($authController) {
 });
 
 $router->add('GET', '/register', function () use ($authController) {
+
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['user'])) {
+        header('Location: /login');
+        exit;
+    }
+
+    if ($_SESSION['user']['role'] !== 'admin') {
+        echo "Acesso negado";
+        exit;
+    }
+
     $authController->showRegister();
 });
 
 $router->add('POST', '/register', function () use ($authController) {
+
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+        echo "Acesso negado";
+        exit;
+    }
+
     $authController->register();
 });
 
