@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Classe responsável pelo gerenciamento de rotas da aplicação.
+ * Permite registrar rotas associando método HTTP e URI a uma ação
+ * (callback), e posteriormente despachar a requisição correta
+ * conforme a URL e o método recebidos.
+ */
+
 namespace App\Core;
 class Router {
     private array $routes = [];

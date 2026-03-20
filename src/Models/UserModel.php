@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Model responsável pelo acesso à tabela de usuários (users).
+ * Contém métodos específicos para buscar usuários por email,
+ * por servidor vinculado e para criar novos registros.
+ */
+
 namespace App\Models;
 
 use App\Core\Model;
@@ -47,7 +53,7 @@ class UserModel extends Model {
             INSERT INTO {$this->table}
             (servidor_id, nome, email, password, role, ativo)
             VALUES
-            (:servidor_id, :nome, :email, :password, :role, 1)
+            (:servidor_id, :nome, :email, :password, :role, TRUE)
         ");
 
         return $stmt->execute([
