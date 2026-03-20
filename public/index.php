@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * Arquivo de entrada principal da aplicação (Front Controller).
+ * Responsável por iniciar a sessão, carregar dependências do Composer,
+ * inicializar variáveis de ambiente, estabelecer a conexão com o banco
+ * de dados, registrar as rotas da aplicação e despachar a requisição
+ * atual para o Router responsável.
+ */
+
 session_start();
 
 require __DIR__ . '/../vendor/autoload.php';

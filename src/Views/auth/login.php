@@ -1,3 +1,9 @@
+<!--
+    View responsável pela tela de login do sistema ORBE.
+    Exibe o formulário de autenticação, mostra mensagens de erro quando necessário
+    e inclui o botão de alternância de tema (light/dark).
+-->
+
 <!DOCTYPE html>
 <html lang="pt-br" data-theme="light">
 
