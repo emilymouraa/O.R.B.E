@@ -27,6 +27,14 @@ class AuthController extends Controller {
     }
 
     public function showRegister() {
+
+        session_start();
+
+        if ($_SESSION['user']['role'] !== 'admin') {
+            header('Location: /dashboard');
+            exit;
+        }
+
         $this->view('auth/register');
     }
 
@@ -51,6 +59,8 @@ class AuthController extends Controller {
     }
 
     public function login() {
+        //var_dump($_POST);
+        //die();
 
         $ra = $_POST['ra'] ?? '';
         $password = $_POST['password'] ?? '';
@@ -64,6 +74,14 @@ class AuthController extends Controller {
             require __DIR__ . '/../Views/auth/login.php';
             return;
         }
+
+        session_start();
+
+        $_SESSION['user'] = [
+            'id' => $result['id'],
+            'name' => $result['name'],
+            'role' => $result['role']
+        ];
 
         header('Location: /dashboard');
         exit;
