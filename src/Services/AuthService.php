@@ -78,7 +78,7 @@ class AuthService {
             return ['error' => 'Usuário não possui acesso ao sistema'];
         }
 
-        if (!$user['ativo']) {
+        if ((bool)$user['ativo'] === false) {
             return ['error' => 'Usuário inativo'];
         }
 
