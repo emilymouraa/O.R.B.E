@@ -41,6 +41,7 @@ $router->add('POST', '/logout', function () {
 
 $router->add('GET', '/dashboard', function () {
 
+    // Protege a rota: somente usuários autenticados podem acessar o dashboard
     if (!isset($_SESSION['user'])) {
         header('Location: /login');
         exit;

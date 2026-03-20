@@ -8,8 +8,10 @@
  */
 
 namespace App\Core;
+
 class Router {
     private array $routes = [];
+
     public function add(string $method, string $route, callable $action): void {
         $this->routes[] = ['method' => $method, 'route'  => $route, 'action' => $action];
     }
@@ -21,6 +23,7 @@ class Router {
                 return;
             }
         }
+
         http_response_code(404);
         echo json_encode(['error' => 'Rota não encontrada']);
     }
