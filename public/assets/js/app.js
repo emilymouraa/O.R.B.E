@@ -1,3 +1,10 @@
+/*
+ * Este arquivo é responsável por controlar o tema da interface (light/dark).
+ * A função toggleTheme alterna o tema atual e salva a preferência no localStorage
+ * para que ela seja mantida entre recarregamentos da página. Ao carregar o DOM,
+ * o script verifica se existe um tema salvo e o aplica automaticamente.
+ */
+
 function toggleTheme() {
 
     const html = document.documentElement;

@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Serviço responsável pela lógica de autenticação da aplicação.
+ * Centraliza regras de negócio de cadastro e login (validações,
+ * verificação de servidor, criação de usuário e abertura de sessão).
+ */
+
 namespace App\Services;
 
 use App\Models\UserModel;
@@ -17,10 +23,12 @@ class AuthService {
 
     public function register(string $ra, string $email, string $password): array {
 
+        // Validação de domínio institucional
         if (!str_ends_with($email, '@prf.govmg.com.br')) {
             return ['error' => 'Domínio de email inválido'];
         }
 
+        // Regra mínima de segurança da senha
         if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $password)) {
             return ['error' => 'Senha deve ter 8 caracteres, com maiúscula, minúscula e número'];
         }
@@ -57,9 +65,6 @@ class AuthService {
     }
 
     public function login(string $ra, string $password): array {
-        //var_dump($ra);
-        //die();
-
 
         $servidor = $this->servidorModel->findByRa($ra);
 
@@ -81,6 +86,7 @@ class AuthService {
             return ['error' => 'Senha inválida'];
         }
 
+        // Cria os dados básicos da sessão do usuário autenticado
         $_SESSION['user'] = [
             'id' => $user['id'],
             'nome' => $user['nome'],
@@ -88,10 +94,6 @@ class AuthService {
             'servidor_id' => $servidor['id']
         ];
 
-        return [
-            'id' => $user['id'],
-            'name' => $user['nome'],
-            'role' => $user['role']
-        ];
+        return ['success' => true];
     }
 }

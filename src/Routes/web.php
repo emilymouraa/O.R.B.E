@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Arquivo responsável por registrar as rotas web da aplicação.
+ * Aqui são associadas URLs e métodos HTTP aos métodos do AuthController,
+ * além de conter uma verificação simples de sessão para acesso ao dashboard.
+ */
+
 use App\Controllers\AuthController;
 use App\Models\UserModel;
 use App\Models\ServidorModel;
@@ -17,35 +23,10 @@ $router->add('GET', '/login', function () use ($authController) {
 });
 
 $router->add('GET', '/register', function () use ($authController) {
-
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['user'])) {
-        header('Location: /login');
-        exit;
-    }
-
-    if ($_SESSION['user']['role'] !== 'admin') {
-        echo "Acesso negado";
-        exit;
-    }
-
     $authController->showRegister();
 });
 
 $router->add('POST', '/register', function () use ($authController) {
-
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-        echo "Acesso negado";
-        exit;
-    }
-
     $authController->register();
 });
 
@@ -60,6 +41,7 @@ $router->add('POST', '/logout', function () {
 
 $router->add('GET', '/dashboard', function () {
 
+    // Protege a rota: somente usuários autenticados podem acessar o dashboard
     if (!isset($_SESSION['user'])) {
         header('Location: /login');
         exit;

@@ -1,3 +1,9 @@
+<!--
+    View responsável pela tela de cadastro do sistema ORBE.
+    Exibe o formulário para criação de conta, mostra mensagens de erro
+    quando o cadastro falha e permite alternar entre tema claro e escuro.
+-->
+
 <!DOCTYPE html>
 <html lang="pt-br" data-theme="light">
 
