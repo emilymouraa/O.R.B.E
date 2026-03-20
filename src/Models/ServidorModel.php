@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * Model responsável por acessar a tabela de servidores no banco de dados.
+ * Estende o Model base e adiciona uma busca específica por RA.
+ */
+
 namespace App\Models;
 
 use App\Core\Model;
