@@ -53,7 +53,7 @@ class UserModel extends Model {
             INSERT INTO {$this->table}
             (servidor_id, nome, email, password, role, ativo)
             VALUES
-            (:servidor_id, :nome, :email, :password, :role, 1)
+            (:servidor_id, :nome, :email, :password, :role, TRUE)
         ");
 
         return $stmt->execute([

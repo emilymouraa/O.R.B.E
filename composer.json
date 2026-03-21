@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "start": "php -S localhost:8001 -t public"
+    "start": "C:\\xampp\\php\\php.exe -S localhost:8001 -t public"
   },
   "config": {
     "process-timeout": 0

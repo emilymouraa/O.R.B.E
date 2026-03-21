@@ -27,9 +27,9 @@ class Database {
             $pass = Env::get('DB_PASSWORD');
 
             try {
-                // Cria a instância PDO com charset UTF-8
+                // Cria a instância PDO com o Supabase
                 self::$instance = new PDO(
-                    "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4",
+                    "pgsql:host=$host;port=$port;dbname=$db;sslmode=require",
                     $user,
                     $pass
                 );
