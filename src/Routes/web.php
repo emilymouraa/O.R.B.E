@@ -1,21 +1,20 @@
 <?php
-
 /*
  * Arquivo responsável por registrar as rotas web da aplicação.
  * Aqui são associadas URLs e métodos HTTP aos métodos do AuthController,
- * além de conter uma verificação simples de sessão para acesso ao dashboard.
+ * além de conter uma verificação simples de sessão para acesso ao dashboard
+ * e as rotas protegidas da API.
  */
-
 use App\Controllers\AuthController;
+use App\Controllers\UserController;
 use App\Models\UserModel;
 use App\Models\ServidorModel;
 use App\Services\AuthService;
+use App\Controllers\UnidadeController;
 
-$userModel = new UserModel($conn);
+$userModel     = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
-
-$authService = new AuthService($userModel, $servidorModel);
-
+$authService   = new AuthService($userModel, $servidorModel);
 $authController = new AuthController($authService);
 
 $router->add('GET', '/login', function () use ($authController) {
@@ -40,12 +39,21 @@ $router->add('POST', '/logout', function () {
 });
 
 $router->add('GET', '/dashboard', function () {
-
-    // Protege a rota: somente usuários autenticados podem acessar o dashboard
     if (!isset($_SESSION['user'])) {
         header('Location: /login');
         exit;
     }
-
     require __DIR__ . '/../Views/dashboard/home.php';
+});
+
+// ── API de Usuários ──────────────────────────────────────────────
+// Protegida por AuthMiddleware + RoleMiddleware (somente admin).
+// GET /api/users?page=1&limit=10&search=...&role=...&ativo=...&unidade_id=...
+
+$router->add('GET', '/api/users', function () use ($conn) {
+    (new UserController($conn))->index();
+});
+
+$router->add('GET', '/api/unidades', function () use ($conn) {
+    (new \App\Controllers\UnidadeController($conn))->index();
 });
