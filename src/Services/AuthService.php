@@ -21,49 +21,60 @@ class AuthService {
         $this->servidorModel = $servidorModel;
     }
 
-    public function register(string $ra, string $email, string $password): array {
+    public function register(string $ra, string $name, string $email, string $password, string $role): array {
 
-        // Validação de domínio institucional
-        if (!str_ends_with($email, '@prf.govmg.com.br')) {
-            return ['error' => 'Domínio de email inválido'];
+            // Validação de domínio
+            if (!str_ends_with($email, '@prf.govmg.com.br')) {
+                return ['error' => 'Domínio de email inválido'];
+            }
+
+            // Validação de senha
+            if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $password)) {
+                return ['error' => 'Senha deve ter 8 caracteres, com maiúscula, minúscula e número'];
+            }
+
+            // Verifica se email já existe
+            $emailExistente = $this->userModel->findByEmail($email);
+            if ($emailExistente) {
+                return ['error' => 'Email já cadastrado'];
+            }
+
+            // 🔥 NOVO: cria ou busca servidor
+            $servidor = $this->servidorModel->findByRa($ra);
+
+            if (!$servidor) {
+                $servidorId = $this->servidorModel->create([
+                    'ra' => $ra,
+                    'nome' => $name,
+                    'cpf' => rand(10000000000, 99999999999),
+                    'data_nascimento' => '2000-01-01',
+                    'data_ingresso' => date('Y-m-d'),
+                    'cargo' => 'Não informado',
+                    'unidade_id' => 1
+                ]);
+            } else {
+                $servidorId = $servidor['id'];
+            }
+
+            // Segurança de role
+            if ($_SESSION['user']['role'] !== 'admin') {
+                $role = 'user';
+            }
+
+            // Criptografia da senha
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+
+            // Cria usuário
+            $this->userModel->create([
+                'servidor_id' => $servidorId,
+                'nome' => $name,
+                'email' => $email,
+                'password' => $hash,
+                'role' => $role
+            ]);
+
+            return ['success' => true];
         }
-
-        // Regra mínima de segurança da senha
-        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $password)) {
-            return ['error' => 'Senha deve ter 8 caracteres, com maiúscula, minúscula e número'];
-        }
-
-        $servidor = $this->servidorModel->findByRa($ra);
-
-        if (!$servidor) {
-            return ['error' => 'RA não encontrado'];
-        }
-
-        $userExistente = $this->userModel->findByServidorId($servidor['id']);
-
-        if ($userExistente) {
-            return ['error' => 'Usuário já cadastrado'];
-        }
-
-        $emailExistente = $this->userModel->findByEmail($email);
-
-        if ($emailExistente) {
-            return ['error' => 'Email já cadastrado'];
-        }
-
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-
-        $this->userModel->create([
-            'servidor_id' => $servidor['id'],
-            'nome' => $servidor['nome'],
-            'email' => $email,
-            'password' => $hash,
-            'role' => 'user'
-        ]);
-
-        return ['success' => true];
-    }
-
     public function login(string $ra, string $password): array {
 
         $servidor = $this->servidorModel->findByRa($ra);

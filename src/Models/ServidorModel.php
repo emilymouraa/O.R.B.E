@@ -30,4 +30,28 @@ class ServidorModel extends Model {
 
         return $servidor ?: null;
     }
+
+    public function create(array $data): int {
+
+        $stmt = $this->db->prepare("
+            INSERT INTO {$this->table}
+            (ra, nome, cpf, data_nascimento, data_ingresso, cargo, unidade_id)
+            VALUES
+            (:ra, :nome, :cpf, :data_nascimento, :data_ingresso, :cargo, :unidade_id)
+        ");
+
+        $stmt->execute([
+            'ra' => $data['ra'],
+            'nome' => $data['nome'],
+            'cpf' => $data['cpf'],
+            'data_nascimento' => $data['data_nascimento'],
+            'data_ingresso' => $data['data_ingresso'],
+            'cargo' => $data['cargo'],
+            'unidade_id' => $data['unidade_id']
+        ]);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    
 }

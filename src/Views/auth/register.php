@@ -69,6 +69,13 @@
                     required
                 >
             </div>
+            <div class="form-group">
+                <label>Tipo de usuário</label>
+                <select name="role" required>
+                    <option value="user">Usuário</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
 
             <button type="submit" class="btn-primary">
                 Criar conta

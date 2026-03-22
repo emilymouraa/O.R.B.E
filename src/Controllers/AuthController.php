@@ -45,11 +45,13 @@ class AuthController extends Controller {
 
         // Obtém os dados enviados pelo formulário de cadastro
         $ra = $_POST['ra'] ?? '';
+        $name = $_POST['name'] ?? '';
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'user';
 
         // Envia os dados para o serviço responsável pelo cadastro
-        $result = $this->authService->register($ra, $email, $password);
+        $result = $this->authService->register($ra, $name, $email, $password, $role);
 
         // Caso ocorra algum erro no cadastro, retorna para a tela
         // de registro exibindo a mensagem
