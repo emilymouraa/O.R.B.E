@@ -53,5 +53,22 @@ class ServidorModel extends Model {
         return (int) $this->db->lastInsertId();
     }
 
+    public function getNextRa(): string {
+
+    $stmt = $this->db->query("
+        SELECT MAX(CAST(SUBSTRING(ra, 4) AS INTEGER)) as max_ra
+        FROM {$this->table}
+        WHERE ra LIKE 'PRF%'
+    ");
+
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $numero = $result['max_ra'] ?? 0;
+
+    $novoNumero = $numero + 1;
+
+    return 'PRF' . str_pad($novoNumero, 5, '0', STR_PAD_LEFT);
+}
+
     
 }

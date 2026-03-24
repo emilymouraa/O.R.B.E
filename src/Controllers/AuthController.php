@@ -43,30 +43,37 @@ class AuthController extends Controller {
 
     public function register() {
 
-        // Obtém os dados enviados pelo formulário de cadastro
-        $ra = $_POST['ra'] ?? '';
-        $name = $_POST['name'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
-        $role = $_POST['role'] ?? 'user';
-
-        // Envia os dados para o serviço responsável pelo cadastro
-        $result = $this->authService->register($ra, $name, $email, $password, $role);
-
-        // Caso ocorra algum erro no cadastro, retorna para a tela
-        // de registro exibindo a mensagem
-        if (isset($result['error'])) {
-
-            $error = $result['error'];
-
-            require __DIR__ . '/../Views/auth/register.php';
-            return;
-        }
-
-        // Após cadastro bem sucedido redireciona para o login
-        header('Location: /login');
-        exit;
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
     }
+
+    // 🔹 Dados vindos do form
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $role = $_POST['role'] ?? 'user';
+
+    // 🔐 Segurança: só admin pode criar admin
+    if ($_SESSION['user']['role'] !== 'admin') {
+        $role = 'user';
+    }
+
+    // 🔹 Chama o service (SEM RA E SEM SENHA)
+    $result = $this->authService->register($name, $email, $role);
+
+    // 🔴 Tratamento de erro
+    if (isset($result['error'])) {
+
+        $error = $result['error'];
+
+        require __DIR__ . '/../Views/auth/register.php';
+        return;
+    }
+
+    // ✅ Sucesso (opcional: mostrar RA e senha gerados)
+    $success = "Usuário criado com sucesso! RA: {$result['ra']} | Senha padrão: {$result['senha']}";
+
+    require __DIR__ . '/../Views/auth/register.php';
+}
 
     public function login() {
 
