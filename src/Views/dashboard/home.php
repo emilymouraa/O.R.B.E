@@ -1,3 +1,10 @@
+<?php
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+?>
+<html 
+lang="pt-br">
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -78,9 +85,15 @@
             <p>Cadastre e gerencie os usuários do sistema</p>
             <span class="counter" id="contador">Carregando...</span>
         </div>
-        <button class="btn-new">
-            <i class="fas fa-plus"></i> Novo Usuário
-        </button>
+        <?php if($_SESSION['user']['role'] === 'admin'): ?>
+
+        <a href="/register">
+            <button class="btn-new">
+                <i class="fas fa-plus"></i> Novo Usuário
+            </button>
+        </a>
+
+        <?php endif; ?>
     </header>
 
     <section class="filters-container">

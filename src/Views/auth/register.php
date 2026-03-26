@@ -32,16 +32,15 @@
             </div>
         <?php endif; ?>
 
+        <?php if (!empty($success)): ?>
+            <div class="success">
+                <?= $success ?>
+            </div>
+        <?php endif; ?>
+
         <form method="POST" action="/register">
 
-            <div class="form-group">
-                <label>RA</label>
-                <input 
-                    type="text"
-                    name="ra"
-                    required
-                >
-            </div>
+            
 
             <div class="form-group">
                 <label>Nome</label>
@@ -61,13 +60,13 @@
                 >
             </div>
 
+            
             <div class="form-group">
-                <label>Senha</label>
-                <input 
-                    type="password" 
-                    name="password" 
-                    required
-                >
+                <label>Tipo de usuário</label>
+                <select name="role" required>
+                    <option value="user">Usuário</option>
+                    <option value="admin">Administrador</option>
+                </select>
             </div>
 
             <button type="submit" class="btn-primary">

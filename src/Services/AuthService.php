@@ -21,49 +21,59 @@ class AuthService {
         $this->servidorModel = $servidorModel;
     }
 
-    public function register(string $ra, string $email, string $password): array {
+    public function register(string $name, string $email, string $role): array {
 
-        // Validação de domínio institucional
-        if (!str_ends_with($email, '@prf.govmg.com.br')) {
-            return ['error' => 'Domínio de email inválido'];
-        }
-
-        // Regra mínima de segurança da senha
-        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $password)) {
-            return ['error' => 'Senha deve ter 8 caracteres, com maiúscula, minúscula e número'];
-        }
-
-        $servidor = $this->servidorModel->findByRa($ra);
-
-        if (!$servidor) {
-            return ['error' => 'RA não encontrado'];
-        }
-
-        $userExistente = $this->userModel->findByServidorId($servidor['id']);
-
-        if ($userExistente) {
-            return ['error' => 'Usuário já cadastrado'];
-        }
-
-        $emailExistente = $this->userModel->findByEmail($email);
-
-        if ($emailExistente) {
-            return ['error' => 'Email já cadastrado'];
-        }
-
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-
-        $this->userModel->create([
-            'servidor_id' => $servidor['id'],
-            'nome' => $servidor['nome'],
-            'email' => $email,
-            'password' => $hash,
-            'role' => 'user'
-        ]);
-
-        return ['success' => true];
+    // 🔹 Validação de domínio
+    if (!str_ends_with($email, '@prf.govmg.com.br')) {
+        return ['error' => 'Domínio de email inválido'];
     }
 
+    // 🔹 Verifica se email já existe
+    $emailExistente = $this->userModel->findByEmail($email);
+    if ($emailExistente) {
+        return ['error' => 'Email já cadastrado'];
+    }
+
+    // 🔐 Segurança: só admin pode criar admin
+    if ($_SESSION['user']['role'] !== 'admin') {
+        $role = 'user';
+    }
+
+    $ra = $this->servidorModel->getNextRa();
+
+    // 🔥 CPF único (não usar rand)
+    $cpf = uniqid();
+
+    // 🔹 Cria servidor
+    $servidorId = $this->servidorModel->create([
+        'ra' => $ra,
+        'nome' => $name,
+        'cpf' => $cpf,
+        'data_nascimento' => '2000-01-01',
+        'data_ingresso' => date('Y-m-d'),
+        'cargo' => 'Não informado',
+        'unidade_id' => 1
+    ]);
+
+    // 🔐 Senha padrão
+    $senhaPadrao = 'Teste123';
+    $hash = password_hash($senhaPadrao, PASSWORD_DEFAULT);
+
+    // 🔹 Cria usuário
+    $this->userModel->create([
+        'servidor_id' => $servidorId,
+        'nome' => $name,
+        'email' => $email,
+        'password' => $hash,
+        'role' => $role
+    ]);
+
+    return [
+        'success' => true,
+        'ra' => $ra,
+        'senha' => $senhaPadrao
+    ];
+}
     public function login(string $ra, string $password): array {
 
         $servidor = $this->servidorModel->findByRa($ra);
