@@ -1,94 +1,59 @@
-<!--
-    View responsável pela tela de cadastro do sistema ORBE.
-    Exibe o formulário para criação de conta, mostra mensagens de erro
-    quando o cadastro falha e permite alternar entre tema claro e escuro.
--->
+<?php
+/*
+ * Views/auth/register.php
+ * Tela de cadastro de usuário — acessível apenas por admins.
+ */
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (($_SESSION['user']['role'] ?? '') !== 'admin') {
+    header('Location: /dashboard');
+    exit;
+}
 
-<!DOCTYPE html>
-<html lang="pt-br" data-theme="light">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Cadastro - ORBE</title>
-
-    <link rel="stylesheet" href="/assets/css/style.css">
-</head>
-
-<body>
+$pageTitle = 'Cadastro';
+$bodyClass = 'auth-page';
+require __DIR__ . '/../layout/header.php';
+?>
 
 <div class="login-container">
-
     <div class="login-box">
-
         <div class="logo-container">
             <img src="/assets/images/orbe_logo.jpeg" alt="ORBE Logo" class="logo">
         </div>
-
         <h2>Criar Conta</h2>
 
         <?php if (!empty($error)): ?>
-            <div class="error">
-                <?= $error ?>
-            </div>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-
         <?php if (!empty($success)): ?>
-            <div class="success">
-                <?= $success ?>
-            </div>
+            <div class="success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
         <form method="POST" action="/register">
-
-            
-
             <div class="form-group">
-                <label>Nome</label>
-                <input 
-                    type="text" 
-                    name="name" 
-                    required
-                >
+                <label for="name">Nome</label>
+                <input type="text" id="name" name="name" required>
             </div>
-
             <div class="form-group">
-                <label>Email</label>
-                <input 
-                    type="email" 
-                    name="email" 
-                    required
-                >
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required>
             </div>
-
-            
             <div class="form-group">
-                <label>Tipo de usuário</label>
-                <select name="role" required>
+                <label for="role">Tipo de usuário</label>
+                <select id="role" name="role" required>
                     <option value="user">Usuário</option>
+                    <option value="gestor">Gestor</option>
                     <option value="admin">Administrador</option>
                 </select>
             </div>
-
-            <button type="submit" class="btn-primary">
-                Criar conta
-            </button>
-
+            <button type="submit" class="btn-primary">Criar conta</button>
         </form>
 
         <p class="register-link">
-            Já possui conta?
-            <a href="/login">Fazer login</a>
+            Já possui conta? <a href="/login">Fazer login</a>
         </p>
-
     </div>
-
 </div>
 
-<button class="theme-toggle" onclick="toggleTheme()">
-    🌙
-</button>
+<button class="theme-toggle" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 
-<script src="/assets/js/app.js"></script>
-
-</body>
-</html>
+<?php require __DIR__ . '/../layout/footer.php'; ?>
