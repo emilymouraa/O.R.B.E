@@ -15,6 +15,7 @@ use App\Controllers\UnidadeController;
 $userModel     = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
 $authService   = new AuthService($userModel, $servidorModel);
+
 $authController = new AuthController($authService);
 
 $router->add('GET', '/login', function () use ($authController) {
@@ -33,6 +34,17 @@ $router->add('POST', '/login', function () use ($authController) {
     $authController->login();
 });
 
+// ── Primeiro acesso — Validação de identidade ────────────────────
+// GET  exibe a tela de validação.
+// POST processa os dados via fetch e responde em JSON.
+$router->add('GET', '/validar-identidade', function () use ($authController) {
+    $authController->showValidateIdentity();
+});
+
+$router->add('POST', '/validar-identidade', function () use ($authController) {
+    $authController->validateIdentity();
+});
+
 $router->add('POST', '/logout', function () {
     $controller = new App\Controllers\AuthController();
     $controller->logout();
@@ -49,7 +61,6 @@ $router->add('GET', '/dashboard', function () {
 // ── API de Usuários ──────────────────────────────────────────────
 // Protegida por AuthMiddleware + RoleMiddleware (somente admin).
 // GET /api/users?page=1&limit=10&search=...&role=...&ativo=...&unidade_id=...
-
 $router->add('GET', '/api/users', function () use ($conn) {
     (new UserController($conn))->index();
 });
