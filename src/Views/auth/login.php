@@ -26,14 +26,15 @@ require __DIR__ . '/../layout/header.php';
             </div>
             <div class="form-group">
                 <label for="password">Senha</label>
-                <input type="password" id="password" name="password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required style="padding-right: 2.5rem;">
+                    <button type="button" onclick="toggleSenha()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem;">
+                        <i class="fas fa-eye" id="iconeSenha"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn-primary">Entrar</button>
         </form>
-
-        <p class="register-link">
-            Não tem conta? <a href="/register">Criar conta</a>
-        </p>
     </div>
 </div>
 

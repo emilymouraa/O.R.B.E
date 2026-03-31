@@ -26,6 +26,18 @@ function toggleTheme() {
     if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
 }
 
+function toggleSenha() {
+    const input  = document.getElementById('password');
+    const icone  = document.getElementById('iconeSenha');
+    if (input.type === 'password') {
+        input.type   = 'text';
+        icone.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type   = 'password';
+        icone.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('theme');
     if (saved) {
@@ -331,7 +343,17 @@ if (formUsuario) {
 
         // ── Monta o payload ───────────────────────────────────────
         const payload = new FormData(formUsuario);
-        payload.set('role', selPerfil.value);
+        payload.set('role', selPerfil.value);  // role vem do select disabled
+
+        // Remove máscara do CPF antes de enviar
+        const cpfLimpo = document.getElementById('m-cpf').value.replace(/\D/g, '');
+        payload.set('cpf', cpfLimpo);
+
+        // Garante que as datas vão no formato correto
+        const dataNasc = document.getElementById('m-data-nascimento').value;
+        const dataAdm  = document.getElementById('m-data-admissao').value;
+        if (dataNasc) payload.set('data_nascimento', dataNasc);
+        if (dataAdm)  payload.set('data_admissao', dataAdm);
 
         // ── Bloqueia o botão durante o envio ──────────────────────
         if (btnSalvar) {
