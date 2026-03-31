@@ -7,6 +7,9 @@
  * O método register() aceita requisições AJAX (fetch) vindas do modal
  * do dashboard e retorna JSON. Também continua funcionando para o
  * formulário clássico da página /register.
+ *
+ * O método login() agora detecta primeiro acesso e redireciona para
+ * a tela de validação de identidade quando necessário.
  */
 namespace App\Controllers;
 
@@ -39,6 +42,24 @@ class AuthController extends Controller
     }
 
     /*
+     * Exibe a tela de validação de identidade (primeiro acesso).
+     * Redireciona para o login se não houver RA pendente na sessão.
+     */
+    public function showValidateIdentity(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (empty($_SESSION['primeiro_acesso_ra'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $this->view('auth/validate_identity');
+    }
+
+    /*
      * Processa o cadastro de novo usuário.
      *
      * Aceita tanto requisições AJAX (fetch do modal, espera JSON de volta)
@@ -61,11 +82,11 @@ class AuthController extends Controller
             session_start();
         }
 
-        // ── Detecta se a requisição é AJAX ────────────────────────────
+        // Detecta se a requisição é AJAX
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
             && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-        // ── Coleta e sanitiza os dados do POST ────────────────────────
+        // Coleta e sanitiza os dados do POST
         $name           = trim($_POST['name']            ?? '');
         $email          = trim($_POST['email']           ?? '');
         $role           = trim($_POST['role']            ?? 'user');
@@ -76,13 +97,13 @@ class AuthController extends Controller
         $dataNascimento = trim($_POST['data_nascimento'] ?? '') ?: null;
         $dataAdmissao   = trim($_POST['data_admissao']   ?? '') ?: null;
 
-        // ── Segurança: apenas admin pode definir roles elevadas ───────
+        // Segurança: apenas admin pode definir roles elevadas
         $sessionRole = $_SESSION['user']['role'] ?? 'guest';
         if ($sessionRole !== 'admin') {
             $role = 'user';
         }
 
-        // ── Chama o serviço de autenticação ───────────────────────────
+        // Chama o serviço de autenticação
         $result = $this->authService->register(
             $name,
             $email,
@@ -95,7 +116,7 @@ class AuthController extends Controller
             $dataAdmissao
         );
 
-        // ── Resposta de erro ──────────────────────────────────────────
+        // Resposta de erro
         if (isset($result['error'])) {
             if ($isAjax) {
                 http_response_code(422);
@@ -107,7 +128,7 @@ class AuthController extends Controller
             return;
         }
 
-        // ── Resposta de sucesso ───────────────────────────────────────
+        // Resposta de sucesso
         if ($isAjax) {
             $this->jsonResponse([
                 'mensagem' => "Usuário criado com sucesso! RA: {$result['ra']} | Senha padrão: {$result['senha']}",
@@ -121,12 +142,28 @@ class AuthController extends Controller
         require __DIR__ . '/../Views/auth/register.php';
     }
 
+    /*
+     * Processa o login.
+     *
+     * Caso seja primeiro acesso (senha padrão), interrompe o fluxo normal
+     * e redireciona para a tela de validação de identidade.
+     */
     public function login(): void
     {
-        $ra       = $_POST['ra']       ?? '';
-        $password = $_POST['password'] ?? '';
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $ra       = trim($_POST['ra']       ?? '');
+        $password = trim($_POST['password'] ?? '');
 
         $result = $this->authService->login($ra, $password);
+
+        // ── Primeiro acesso detectado ─────────────────────────────────
+        if (isset($result['first_access'])) {
+            header('Location: /validar-identidade');
+            exit;
+        }
 
         if (isset($result['error'])) {
             $error = $result['error'];
@@ -136,6 +173,43 @@ class AuthController extends Controller
 
         header('Location: /dashboard');
         exit;
+    }
+
+    /*
+     * Processa a validação de identidade no fluxo de primeiro acesso.
+     *
+     * Requisição AJAX (fetch) — responde sempre em JSON.
+     * Em caso de sucesso, o frontend redireciona para /redefinir-senha
+     * (responsabilidade do outro dev).
+     */
+    public function validateIdentity(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        header('Content-Type: application/json');
+
+        $email          = trim($_POST['email']           ?? '');
+        $cpf            = trim($_POST['cpf']             ?? '');
+        $dataNascimento = trim($_POST['data_nascimento'] ?? '');
+
+        if (!$email || !$cpf || !$dataNascimento) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Preencha todos os campos.']);
+            return;
+        }
+
+        $result = $this->authService->validateIdentity($email, $cpf, $dataNascimento);
+
+        if (isset($result['error'])) {
+            http_response_code(422);
+            echo json_encode(['error' => $result['error']]);
+            return;
+        }
+
+        // Sucesso: frontend redirecionará para a tela de redefinição de senha
+        echo json_encode(['success' => true, 'redirect' => '/redefinir-senha']);
     }
 
     public function logout(): void
