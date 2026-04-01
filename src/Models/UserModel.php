@@ -158,4 +158,18 @@ class UserModel extends Model
 
         return (int) $stmt->fetchColumn();
     }
+
+    public function updatePassword(int $userId, string $hash): bool
+{
+    $stmt = $this->db->prepare("
+        UPDATE {$this->table}
+        SET password = :password, updated_at = NOW()
+        WHERE id = :id
+    ");
+
+    return $stmt->execute([
+        'password' => $hash,
+        'id' => $userId
+    ]);
+}
 }
