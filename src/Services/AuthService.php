@@ -176,4 +176,40 @@ class AuthService {
 
         return ['success' => true];
     }
+
+    public function resetPassword(string $password, string $confirm): array
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // 🔒 Verifica sessão válida
+        $ra = $_SESSION['primeiro_acesso_ra'] ?? null;
+        if (!$ra) {
+            return ['error' => 'Sessão expirada. Faça login novamente.'];
+        }
+
+        // 🔐 Validação de senha forte
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $password)) {
+            return ['error' => 'Senha deve ter 8 caracteres, maiúscula, minúscula, número e especial'];
+        }
+
+        // 🔁 Confirmação
+        if ($password !== $confirm) {
+            return ['error' => 'As senhas não coincidem'];
+        }
+
+        $servidor = $this->servidorModel->findByRa($ra);
+        $user = $this->userModel->findByServidorId($servidor['id']);
+
+        if (!$user) {
+            return ['error' => 'Usuário não encontrado'];
+        }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $this->userModel->updatePassword($user['id'], $hash);
+
+        return ['success' => true];
+    }
 }

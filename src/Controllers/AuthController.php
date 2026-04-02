@@ -212,6 +212,46 @@ class AuthController extends Controller
         echo json_encode(['success' => true, 'redirect' => '/redefinir-senha']);
     }
 
+    public function showResetPassword(): void
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Bloqueia acesso direto
+    if (!isset($_SESSION['identidade_validada'])) {
+        header('Location: /login');
+        exit;
+    }
+
+    require __DIR__ . '/../Views/auth/reset_password.php';
+}
+
+    public function resetPassword(): void
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $password = $_POST['password'] ?? '';
+    $confirm  = $_POST['confirm_password'] ?? '';
+
+    $result = $this->authService->resetPassword($password, $confirm);
+
+    if (isset($result['error'])) {
+        $error = $result['error'];
+        require __DIR__ . '/../Views/auth/reset_password.php';
+        return;
+    }
+
+    // Limpa sessão de primeiro acesso
+    unset($_SESSION['primeiro_acesso_ra']);
+    unset($_SESSION['identidade_validada']);
+
+    header('Location: /login');
+    exit;
+}
+
     public function logout(): void
     {
         if (session_status() === PHP_SESSION_NONE) {

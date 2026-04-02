@@ -45,6 +45,14 @@ $router->add('POST', '/validar-identidade', function () use ($authController) {
     $authController->validateIdentity();
 });
 
+$router->add('GET', '/redefinir-senha', function () use ($authController) {
+    $authController->showResetPassword();
+});
+
+$router->add('POST', '/redefinir-senha', function () use ($authController) {
+    $authController->resetPassword();
+});
+
 $router->add('POST', '/logout', function () {
     $controller = new App\Controllers\AuthController();
     $controller->logout();
