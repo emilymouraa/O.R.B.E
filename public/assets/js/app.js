@@ -27,14 +27,32 @@ function toggleTheme() {
 }
 
 function toggleSenha() {
-    const input  = document.getElementById('password');
-    const icone  = document.getElementById('iconeSenha');
-    if (input.type === 'password') {
-        input.type   = 'text';
-        icone.classList.replace('fa-eye', 'fa-eye-slash');
+    const input = document.getElementById('password');
+    const icon = document.getElementById('iconeSenha');
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
     } else {
-        input.type   = 'password';
-        icone.classList.replace('fa-eye-slash', 'fa-eye');
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
+}
+
+function toggleConfirmSenha() {
+    const input = document.getElementById('confirm_password');
+    const icon = document.getElementById('iconeConfirmSenha');
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
     }
 }
 
