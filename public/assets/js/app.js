@@ -423,3 +423,22 @@ document.addEventListener('DOMContentLoaded', () => {
         carregarUsuarios();
     }
 });
+
+(function () {
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.getElementById('sidebarToggle');
+ 
+    if (!sidebar || !toggle) return;
+ 
+    // Restaura estado salvo (aberta ou fechada)
+    const savedSidebar = localStorage.getItem('sidebarOpen');
+    if (savedSidebar === 'true') {
+        sidebar.classList.add('open');
+    }
+ 
+    // Clique no hambúrguer
+    toggle.addEventListener('click', function () {
+        const isOpen = sidebar.classList.toggle('open');
+        localStorage.setItem('sidebarOpen', isOpen);
+    });
+})();
