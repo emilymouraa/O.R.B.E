@@ -11,6 +11,8 @@ use App\Models\UserModel;
 use App\Models\ServidorModel;
 use App\Services\AuthService;
 use App\Controllers\UnidadeController;
+use App\Controllers\OrganogramaController;
+
 $userModel     = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
 $authService   = new AuthService($userModel, $servidorModel);
@@ -61,6 +63,13 @@ $router->add('GET', '/api/users', function () use ($conn) {
 });
 $router->add('GET', '/api/unidades', function () use ($conn) {
     (new \App\Controllers\UnidadeController($conn))->index();
+});
+$router->add('GET', '/api/organograma/hierarquia-usuarios', function () use ($conn) {
+    (new OrganogramaController($conn))->index();
+});
+
+$router->add('GET', '/api/organograma/hierarquia-usuarios/gestor', function () use ($conn) {
+    (new OrganogramaController($conn))->usuariosPorGestor();
 });
 
 // ── Rotas protegidas — páginas do sistema ────────────────────────

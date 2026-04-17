@@ -86,7 +86,7 @@ require __DIR__ . '/../layout/sidebar.php';
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 id="modalTitulo">Cadastrar Novo Usuário</h2>
-                    <button type="button" class="close-btn" onclick="closeModal()" aria-label="Fechar">&times;</button>
+                    <button type="button" class="close-btn" onclick="dismissModal()" aria-label="Fechar">&times;</button>
                 </div>
                 <form id="formUsuario" novalidate>
                     <div class="form-grid">
