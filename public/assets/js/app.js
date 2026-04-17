@@ -297,7 +297,14 @@ if (selCargo && selPerfil) {
     });
 }
 
-/** Fecha o modal, limpa o form e remove o feedback */
+/** Fecha sem resetar*/
+function dismissModal() {
+    if (!modal) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+/** Fecha e reseta*/
 function closeModal() {
     if (!modal) return;
     modal.classList.remove('open');
@@ -329,10 +336,13 @@ if (inputCpf) {
 /** Fecha o modal ao clicar no backdrop */
 if (modal) {
     modal.addEventListener('click', function (e) {
-        if (e.target === modal) closeModal();
+        if (e.target === modal) dismissModal();
     });
 }
 
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal?.classList.contains('open')) dismissModal();
+});
 /** Fecha o modal com ESC */
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && modal?.classList.contains('open')) closeModal();
@@ -423,3 +433,22 @@ document.addEventListener('DOMContentLoaded', () => {
         carregarUsuarios();
     }
 });
+
+(function () {
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.getElementById('sidebarToggle');
+ 
+    if (!sidebar || !toggle) return;
+ 
+    // Restaura estado salvo (aberta ou fechada)
+    const savedSidebar = localStorage.getItem('sidebarOpen');
+    if (savedSidebar === 'true') {
+        sidebar.classList.add('open');
+    }
+ 
+    // Clique no hambúrguer
+    toggle.addEventListener('click', function () {
+        const isOpen = sidebar.classList.toggle('open');
+        localStorage.setItem('sidebarOpen', isOpen);
+    });
+})();

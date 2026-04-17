@@ -1,1 +1,74 @@
-# O.R.B.E/ │ ├── public/ │ ├── index.php │ ├── assets/ │ │ ├── css/ │ │ │ └── style.css │ │ ├── js/ │ │ │ └── app.js │ │ └── images/ │ ├── src/ │ │ │ ├── Core/ │ │ ├── Router.php │ │ ├── Controller.php │ │ ├── Model.php │ │ ├── Database.php │ │ └── Env.php │ │ │ ├── Controllers/ │ │ ├── AuthController.php │ │ └── UserController.php │ │ └── UnidadeController.php │ │ │ ├── Models/ │ │ ├── UserModel.php │ │ ├── ServidorModel.php │ │ └── LogModel.php │ │ │ ├── Middleware/ │ │ ├── AuthMiddleware.php │ │ └── RoleMiddleware.php │ │ │ ├── Services/ │ │ └── AuthService.php │ │ │ ├── Views/ │ │ ├── layout/ │ │ │ ├── header.php │ │ │ └── footer.php │ │ │ │ │ ├── auth/ │ │ │ ├── login.php │ │ │ └── register.php │ │ │ │ │ └── dashboard/ │ │ └── home.php │ │ │ ├── Helpers/ │ │ └── Response.php │ │ │ └── Routes/ │ └── web.php │ ├── .env ├── .gitignore ├── composer.json └── README.md
+O.R.B.E/
+├── public/
+│   ├── assets/
+│   │   ├── css/
+│   │   │   └── style.css
+│   │   ├── images/
+│   │   └── js/
+│   │       └── app.js
+│   ├── .htaccess
+│   ├── favicon.ico
+│   └── index.php
+│
+├── src/
+│   ├── Controllers/
+│   │   ├── AuthController.php
+│   │   ├── UnidadeController.php
+│   │   └── UserController.php
+│   │
+│   ├── Core/
+│   │   ├── Controller.php
+│   │   ├── Database.php
+│   │   ├── Env.php
+│   │   ├── Model.php
+│   │   └── Router.php
+│   │
+│   ├── Helpers/
+│   │   └── Response.php
+│   │
+│   ├── Middleware/
+│   │   ├── AuthMiddleware.php
+│   │   └── RoleMiddleware.php
+│   │
+│   ├── Models/
+│   │   ├── LogModel.php
+│   │   ├── ServidorModel.php
+│   │   └── UserModel.php
+│   │
+│   ├── Routes/
+│   │   └── web.php
+│   │
+│   ├── Services/
+│   │   └── AuthService.php
+│   │
+│   └── Views/
+│       ├── auth/
+│       │   ├── login.php
+│       │   ├── register.php
+│       │   ├── reset_password.php
+│       │   └── validate_identity.php
+│       │
+│       ├── dashboard/
+│       │   ├── banco-talentos.php
+│       │   ├── competencias.php
+│       │   ├── home.php
+│       │   ├── organograma.php
+│       │   ├── painel.php
+│       │   └── perfil.php
+│       │
+│       └── layout/
+│           ├── footer.php
+│           ├── header.php
+│           └── sidebar.php
+│
+├── vendor/
+│   ├── composer/
+│   └── autoload.php
+│
+├── .env
+├── .gitignore
+├── composer.json
+├── composer.lock
+├── README.md
+├── schema.sql
+└── test.php

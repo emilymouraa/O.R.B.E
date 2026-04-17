@@ -43,6 +43,14 @@
 
     /* Inputs */
     --input-bg: #ffffff;
+
+    --sidebar-width-open:    220px;
+    --sidebar-width-closed:   62px;
+    --sidebar-bg:            #ffffff;
+    --sidebar-border:        #d0d7e2;
+    --sidebar-active-bg:     #dbeafe;
+    --sidebar-active-text:   #002d5e;
+    --sidebar-hover-bg:      #f1f5f9;
 }
 
 [data-theme="dark"] {
@@ -63,6 +71,12 @@
     --danger:   #f87171;
 
     --input-bg: #253347;
+
+    --sidebar-bg:            #162032;
+    --sidebar-border:        #334155;
+    --sidebar-active-bg:     #1e3a5f;
+    --sidebar-active-text:   #3a7cff;
+    --sidebar-hover-bg:      #1e293b;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -347,9 +361,10 @@ body.auth-page {
    6. DASHBOARD
    ════════════════════════════════════════════════════════════════ */
 body.dashboard-page {
-    padding: 2rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    min-height: 100vh;
+    padding: 0;
 }
 
 /* ── Cabeçalho da página ───────────────────────────────────────── */
@@ -472,6 +487,231 @@ tbody tr:hover { background: var(--surface); }
     justify-content: flex-start;
 }
 
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    transition: margin-left 0.3s ease;
+}
+ 
+/* ════════════════════════════════════════════════════════════════
+   SIDEBAR — Variáveis extras (adicionar dentro do bloco :root e [data-theme="dark"])
+   ════════════════════════════════════════════════════════════════
+ 
+   Em :root, adicione:
+       --sidebar-width-open:    220px;
+       --sidebar-width-closed:   62px;
+       --sidebar-bg:            #ffffff;
+       --sidebar-border:        #d0d7e2;
+       --sidebar-active-bg:     #dbeafe;
+       --sidebar-active-text:   #002d5e;
+       --sidebar-hover-bg:      #f1f5f9;
+ 
+   Em [data-theme="dark"], adicione:
+       --sidebar-bg:            #162032;
+       --sidebar-border:        #334155;
+       --sidebar-active-bg:     #1e3a5f;
+       --sidebar-active-text:   #3a7cff;
+       --sidebar-hover-bg:      #1e293b;
+*/
+ 
+/* ════════════════════════════════════════════════════════════════
+   6b. SIDEBAR
+   ════════════════════════════════════════════════════════════════ */
+.sidebar {
+    width: var(--sidebar-width-closed, 62px);
+    min-height: 100vh;
+    background: var(--sidebar-bg, var(--white));
+    border-right: 1px solid var(--sidebar-border, var(--border));
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+}
+ 
+.sidebar.open {
+    width: var(--sidebar-width-open, 220px);
+}
+ 
+/* ── Cabeçalho da sidebar ────────────────────────────────────── */
+.sidebar-logo-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 0.5rem 0.5rem;
+    transition: padding 0.3s ease;
+}
+ 
+/* ── Logo: pequena fechada, maior aberta ─────────────────────── */
+.sidebar-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: width 0.3s cubic-bezier(.4,0,.2,1),
+                height 0.3s cubic-bezier(.4,0,.2,1);
+}
+ 
+.sidebar.open .sidebar-logo {
+    width: 56px;
+    height: 56px;
+}
+
+.sidebar-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--sidebar-border, var(--border));
+}
+ 
+/* ── Botão hambúrguer ──────────────────────────────────────────── */
+.sidebar-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+ 
+.sidebar-toggle:hover {
+    background: var(--sidebar-hover-bg, var(--surface));
+}
+ 
+.bar {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--muted);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+    transform-origin: center;
+}
+ 
+/* Animação hambúrguer → X quando aberto */
+.sidebar.open .bar-top {
+    transform: translateY(7px) rotate(45deg);
+}
+.sidebar.open .bar-mid {
+    opacity: 0;
+    width: 0;
+}
+.sidebar.open .bar-bot {
+    transform: translateY(-7px) rotate(-45deg);
+}
+ 
+/* ── Navegação ─────────────────────────────────────────────────── */
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0;
+    overflow: hidden;
+}
+ 
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 0.75rem;
+    margin: 2px 6px;
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.18s, color 0.18s;
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: calc(100% - 12px);
+    text-align: left;
+}
+
+.sidebar.open .sidebar-link {
+    justify-content: flex-start;
+}
+ 
+.sidebar-link:hover {
+    background: var(--sidebar-hover-bg, var(--surface));
+    color: var(--text);
+    text-decoration: none;
+}
+ 
+.sidebar-link.active {
+    background: var(--sidebar-active-bg, var(--primary-light));
+    color: var(--sidebar-active-text, var(--primary));
+    font-weight: 600;
+}
+ 
+.sidebar-link.active .sidebar-icon {
+    color: var(--sidebar-active-text, var(--primary));
+}
+ 
+.sidebar-icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: color 0.18s;
+}
+ 
+/* Label some quando sidebar fechada */
+.sidebar-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease, width 0.3s ease;
+    pointer-events: none;
+}
+ 
+.sidebar.open .sidebar-label {
+    opacity: 1;
+    width: auto;
+    pointer-events: auto;
+}
+ 
+/* ── Rodapé da sidebar (logout) ───────────────────────────────── */
+.sidebar-footer {
+    border-top: 1px solid var(--sidebar-border, var(--border));
+    padding: 0.5rem 0;
+}
+ 
+.sidebar-footer form {
+    margin: 0;
+}
+ 
+.sidebar-logout {
+    color: var(--danger) !important;
+}
+ 
+.sidebar-logout:hover {
+    background: #fee2e2 !important;
+    color: var(--danger) !important;
+}
+ 
+[data-theme="dark"] .sidebar-logout:hover {
+    background: rgba(248, 113, 113, 0.15) !important;
+}
+
 /* ════════════════════════════════════════════════════════════════
    7. MODAL & FORMULÁRIO DO MODAL
    ════════════════════════════════════════════════════════════════ */
@@ -590,6 +830,18 @@ tbody tr:hover { background: var(--surface); }
 
     .btn-theme-fixed,
     .theme-toggle      { bottom: 1rem; right: 1rem; }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 200;
+        min-height: 100vh;
+    }
+    .main-content {
+        padding: 1rem;
+        margin-left: var(--sidebar-width-closed, 62px);
+    }
 }
 
 input[type="password"]::-ms-reveal,
