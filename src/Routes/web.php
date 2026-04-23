@@ -12,6 +12,7 @@ use App\Models\ServidorModel;
 use App\Services\AuthService;
 use App\Controllers\UnidadeController;
 use App\Controllers\OrganogramaController;
+use App\Controllers\BancoTalentosController;
 
 $userModel     = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
@@ -29,7 +30,7 @@ $router->add('POST', '/register', function () use ($authController) {
 $router->add('POST', '/login', function () use ($authController) {
     $authController->login();
 });
-// ── Primeiro acesso — Validação de identidade ────────────────────
+
 // GET  exibe a tela de validação.
 // POST processa os dados via fetch e responde em JSON.
 $router->add('GET', '/validar-identidade', function () use ($authController) {
@@ -55,7 +56,7 @@ $router->add('GET', '/dashboard', function () {
     }
     require __DIR__ . '/../Views/dashboard/home.php';
 });
-// ── API de Usuários ──────────────────────────────────────────────
+
 // Protegida por AuthMiddleware + RoleMiddleware (somente admin).
 // GET /api/users?page=1&limit=10&search=...&role=...&ativo=...&unidade_id=...
 $router->add('GET', '/api/users', function () use ($conn) {
@@ -72,7 +73,6 @@ $router->add('GET', '/api/organograma/hierarquia-usuarios/gestor', function () u
     (new OrganogramaController($conn))->usuariosPorGestor();
 });
 
-// ── Rotas protegidas — páginas do sistema ────────────────────────
 // Adicionadas para suportar a sidebar de navegação.
 // Todas verificam sessão e redirecionam para /login se não autenticado.
 $rotasProtegidas = [
@@ -93,3 +93,15 @@ foreach ($rotasProtegidas as $uri => $view) {
         require __DIR__ . '/../Views/' . $view;
     });
 }
+
+$router->add('GET', '/api/banco-talentos/indicadores', function () use ($conn) {
+    (new BancoTalentosController($conn))->indicadores();
+});
+
+$router->add('GET', '/api/banco-talentos/ranking', function () use ($conn) {
+    (new BancoTalentosController($conn))->ranking();
+});
+
+$router->add('GET', '/api/banco-talentos/busca', function () use ($conn) {
+    (new BancoTalentosController($conn))->busca();
+});

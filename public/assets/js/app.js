@@ -452,3 +452,192 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sidebarOpen', isOpen);
     });
 })();
+
+(function () {
+    'use strict';
+    const CARGOS = {
+        '3a_classe':      '3ª Classe',
+        '2a_classe':      '2ª Classe',
+        '1a_classe':      '1ª Classe',
+        'classe_especial':'Classe Especial',
+        'chefe_divisao':  'Chefe de Divisão',
+        'diretor_geral':  'Diretor-Geral',
+    };
+
+    let rankingCompleto = [];
+
+    function nivelClass(nivel) {
+        if (nivel === 'Alto')  return 'alto';
+        if (nivel === 'Médio') return 'medio';
+        return 'baixo';
+    }
+
+    function cargoLabel(cargo) {
+        return CARGOS[cargo] ?? cargo;
+    }
+
+    function renderIndicadores(data) {
+        document.getElementById('ind-alto').textContent  = data.distribuicao.alto_potencial.quantidade;
+        document.getElementById('ind-alto-pct').textContent =
+            data.distribuicao.alto_potencial.percentual + '% do total';
+
+        document.getElementById('ind-medio').textContent = data.distribuicao.medio_potencial.quantidade;
+        document.getElementById('ind-medio-pct').textContent =
+            data.distribuicao.medio_potencial.percentual + '% do total';
+
+        document.getElementById('ind-media').textContent = data.pontuacao_media;
+        document.getElementById('ind-total').textContent = data.total_talentos;
+    }
+
+    function renderCard(s) {
+        const cls      = nivelClass(s.nivel_potencial);
+        const posClass = s.posicao <= 3 ? `bt-posicao--${s.posicao}` : '';
+        const barFill  = `bt-metrica__barra-fill--${cls}`;
+        const largura  = Math.min(s.pontuacao, 100);
+
+        return `
+        <div class="bt-servidor bt-servidor--${cls}">
+            <div class="bt-servidor__top">
+                <div class="bt-posicao ${posClass}">${s.posicao}º</div>
+                <div class="bt-avatar"><i class="fas fa-user-shield"></i></div>
+                <div class="bt-info">
+                    <div class="bt-info__nome">${s.nome}</div>
+                    <div class="bt-info__sub">
+                        <span class="bt-cargo-label">${cargoLabel(s.cargo)}</span>
+                        ${s.unidade}
+                    </div>
+                </div>
+                <span class="bt-badge bt-badge--${cls}">${s.nivel_potencial} Potencial</span>
+            </div>
+
+            <div class="bt-servidor__metricas">
+                <!-- Pontuação com barra -->
+                <div>
+                    <div class="bt-metrica__label">Pontuação Total</div>
+                    <div class="bt-metrica__barra-wrap">
+                        <div class="bt-metrica__barra">
+                            <div class="bt-metrica__barra-fill ${barFill}"
+                                 style="width:${largura}%"></div>
+                        </div>
+                        <span class="bt-metrica__num">${s.pontuacao}</span>
+                    </div>
+                </div>
+
+                <!-- Competências -->
+                <div>
+                    <div class="bt-metrica__label">Competências</div>
+                    <div class="bt-metrica__val">
+                        <i class="fas fa-trophy"></i>
+                        ${s.total_competencias} registrada${s.total_competencias !== 1 ? 's' : ''}
+                    </div>
+                </div>
+
+                <!-- Tempo de serviço -->
+                <div>
+                    <div class="bt-metrica__label">Tempo de Serviço</div>
+                    <div class="bt-metrica__val">
+                        <i class="fas fa-clock"></i>
+                        ${s.tempo_servico}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderLista(lista) {
+        const el = document.getElementById('bt-lista');
+
+        if (!lista || lista.length === 0) {
+            el.innerHTML = `
+                <div class="bt-empty">
+                    <i class="fas fa-user-slash"></i>
+                    Nenhum servidor encontrado para este critério.
+                </div>`;
+            document.getElementById('bt-contador').textContent = '0 servidores';
+            return;
+        }
+
+        el.innerHTML = lista.map(renderCard).join('');
+        document.getElementById('bt-contador').textContent =
+            lista.length + (lista.length === 1 ? ' servidor' : ' servidores');
+    }
+
+    async function carregarIndicadores() {
+        try {
+            const res  = await fetch('/api/banco-talentos/indicadores');
+            const json = await res.json();
+            if (json.success) renderIndicadores(json.data);
+        } catch (e) {
+            console.error('Erro ao carregar indicadores:', e);
+        }
+    }
+
+    async function carregarRanking() {
+        try {
+            const res  = await fetch('/api/banco-talentos/ranking');
+            const json = await res.json();
+            if (json.success) {
+                rankingCompleto = json.data;
+                renderLista(rankingCompleto);
+            }
+        } catch (e) {
+            document.getElementById('bt-lista').innerHTML = `
+                <div class="bt-empty">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    Erro ao carregar o ranking. Tente novamente.
+                </div>`;
+        }
+    }
+
+    let debounceTimer;
+
+    async function executarBusca(termo) {
+        termo = termo.trim();
+
+        if (termo === '') {
+            renderLista(rankingCompleto);
+            return;
+        }
+
+        try {
+            const res  = await fetch('/api/banco-talentos/busca?q=' + encodeURIComponent(termo));
+            const json = await res.json();
+
+            if (json.success) {
+                const resultado = json.data.map(s => {
+                    const original = rankingCompleto.find(r => r.nome === s.nome);
+                    return original ?? s;
+                });
+                renderLista(resultado);
+            } else {
+                renderLista([]);
+            }
+        } catch (e) {
+            console.error('Erro na busca:', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!document.getElementById('bt-lista')) return;
+        carregarIndicadores();
+        carregarRanking();
+
+        const input     = document.getElementById('bt-search');
+        const btnClear  = document.getElementById('bt-search-clear');
+
+        input.addEventListener('input', () => {
+            const v = input.value;
+            btnClear.style.display = v ? 'block' : 'none';
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => executarBusca(v), 350);
+        });
+
+        btnClear.addEventListener('click', () => {
+            input.value = '';
+            btnClear.style.display = 'none';
+            renderLista(rankingCompleto);
+            input.focus();
+        });
+    });
+
+})();
