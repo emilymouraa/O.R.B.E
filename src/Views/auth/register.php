@@ -1,80 +1,59 @@
-<!DOCTYPE html>
-    <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <title>Cadastro - ORBE</title>
-        <style>
-            body{
-                font-family: Arial;
-                background: linear-gradient(135deg,#667eea,#764ba2);
-                height:100vh;
-                display:flex;
-                justify-content:center;
-                align-items:center;
-            }
-            .container{
-                background:white;
-                padding:40px;
-                border-radius:10px;
-                width:320px;
-                box-shadow:0 8px 20px rgba(0,0,0,0.2);
-            }
-            h2{
-                text-align:center;
-                margin-bottom:20px;
-            }
-            input{
-                width:100%;
-                padding:10px;
-                margin-bottom:15px;
-                border-radius:5px;
-                border:1px solid #ccc;
-            }
-            button{
-                width:100%;
-                padding:10px;
-                background:#667eea;
-                border:none;
-                color:white;
-                font-weight:bold;
-                border-radius:5px;
-                cursor:pointer;
-            }
-            button:hover{
-                background:#5a67d8;
-            }
-            .error{
-                color:red;
-                margin-bottom:10px;
-                text-align:center;
-            }
-            .link{
-                text-align:center;
-                margin-top:15px;
-            }
-            .link a{
-                color:#667eea;
-                text-decoration:none;
-                font-size:14px;
-            }
-        </style>
-    </head>
+<?php
+/*
+ * Views/auth/register.php
+ * Tela de cadastro de usuário — acessível apenas por admins.
+ */
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (($_SESSION['user']['role'] ?? '') !== 'admin') {
+    header('Location: /dashboard');
+    exit;
+}
 
-    <body>
-        <div class="container">
-            <h2>Criar Conta</h2>
-            <?php if(isset($error)): ?>
-            <div class="error"><?= $error ?></div>
-            <?php endif; ?>
-            <form method="POST" action="/register">
-                <input type="text" name="ra" placeholder="RA" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Senha" required>
-                <button type="submit">Cadastrar</button>
-            </form>
-            <div class="link">
-                <a href="/login">Já possui conta? Fazer login</a>
-            </div>
+$pageTitle = 'Cadastro';
+$bodyClass = 'auth-page';
+require __DIR__ . '/../layout/header.php';
+?>
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="logo-container">
+            <img src="/assets/images/orbe_logo.jpeg" alt="ORBE Logo" class="logo">
         </div>
-    </body>
-</html>
+        <h2>Criar Conta</h2>
+
+        <?php if (!empty($error)): ?>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($success)): ?>
+            <div class="success"><?= htmlspecialchars($success) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="/register">
+            <div class="form-group">
+                <label for="name">Nome</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Tipo de usuário</label>
+                <select id="role" name="role" required>
+                    <option value="user">Usuário</option>
+                    <option value="gestor">Gestor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Criar conta</button>
+        </form>
+
+        <p class="register-link">
+            Já possui conta? <a href="/login">Fazer login</a>
+        </p>
+    </div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
+
+<?php require __DIR__ . '/../layout/footer.php'; ?>

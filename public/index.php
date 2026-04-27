@@ -1,4 +1,14 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+/*
+ * Arquivo de entrada principal da aplicação (Front Controller).
+ * Responsável por iniciar a sessão, carregar dependências do Composer,
+ * inicializar variáveis de ambiente, estabelecer a conexão com o banco
+ * de dados, registrar as rotas da aplicação e despachar a requisição
+ * atual para o Router responsável.
+ */
 
 session_start();
 
@@ -21,7 +31,9 @@ $router->add('GET', '/', function () {
     exit;
 });
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = '/' . trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$base = '/projeto_orbe/O.R.B.E/public';
+$uri = str_replace($base, '', $uri) ?: '/';
 $method = $_SERVER['REQUEST_METHOD'];
 
 $router->dispatch($uri, $method);

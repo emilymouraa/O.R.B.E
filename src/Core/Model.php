@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Classe base para os Models da aplicação.
+ * Centraliza operações básicas de banco (buscar por id, listar todos e deletar),
+ * que podem ser reutilizadas pelos models específicos.
+ */
+
 namespace App\Core;
 
 use PDO;
@@ -7,12 +13,17 @@ use PDO;
 abstract class Model {
     protected PDO $db;
     protected string $table;
+
     public function __construct(PDO $connection) {
         $this->db = $connection;
     }
 
     public function find(int $id): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT * FROM {$this->table}
+            WHERE id = :id
+            LIMIT 1
+        ");
         $stmt->execute(['id' => $id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
