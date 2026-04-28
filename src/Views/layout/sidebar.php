@@ -10,7 +10,7 @@
 $currentPath = strtok($_SERVER['REQUEST_URI'], '?');
  
 $navItems = [
-    ['href' => '/dashboard',       'icon' => 'fa-chart-line',  'label' => 'Painel de Monitoramento'],
+    ['href' => '/painel',       'icon' => 'fa-chart-line',  'label' => 'Painel'],
     ['href' => '/usuarios',        'icon' => 'fa-users',       'label' => 'Usuários'],
     ['href' => '/organograma',     'icon' => 'fa-sitemap',     'label' => 'Organograma'],
     ['href' => '/competencias',    'icon' => 'fa-star',        'label' => 'Competências'],

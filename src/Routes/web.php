@@ -13,6 +13,7 @@ use App\Services\AuthService;
 use App\Controllers\UnidadeController;
 use App\Controllers\OrganogramaController;
 use App\Controllers\BancoTalentosController;
+use App\Controllers\PainelController;
 
 $userModel     = new UserModel($conn);
 $servidorModel = new ServidorModel($conn);
@@ -104,4 +105,16 @@ $router->add('GET', '/api/banco-talentos/ranking', function () use ($conn) {
 
 $router->add('GET', '/api/banco-talentos/busca', function () use ($conn) {
     (new BancoTalentosController($conn))->busca();
+});
+
+$router->add('GET', '/api/painel/indicadores', function () use ($conn) {
+    (new PainelController($conn))->indicadores();
+});
+ 
+$router->add('GET', '/api/painel/servidores-por-unidade', function () use ($conn) {
+    (new PainelController($conn))->servidoresPorUnidade();
+});
+ 
+$router->add('GET', '/api/painel/distribuicao-status', function () use ($conn) {
+    (new PainelController($conn))->distribuicaoStatus();
 });
