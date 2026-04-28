@@ -11,7 +11,7 @@
 
 // ── Base URL dinâmica ─────────────────────────────────────────────
 const BASE_URL = window.location.pathname
-    .replace(/\/(login|register|dashboard|api).*$/, '')
+    .replace(/\/(login|register|dashboard|usuarios|perfil|organograma|competencias|banco-talentos|painel|api).*$/, '')
     .replace(/\/$/, '');
 
 // ── Tema ─────────────────────────────────────────────────────────
@@ -638,6 +638,196 @@ document.addEventListener('DOMContentLoaded', () => {
             renderLista(rankingCompleto);
             input.focus();
         });
+    });
+
+})();
+
+(function () {
+    if (!document.getElementById('painel-indicadores')) return;
+
+    function isDark()     { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+    function corTexto()   { return isDark() ? '#e2e8f0' : '#1e293b'; }
+    function corGrade()   { return isDark() ? '#334155' : '#e2e8f0'; }
+    function corPrimary() { return isDark() ? '#3a7cff' : '#002d5e'; }
+
+    function fmtNum(v)  { return (v == null || v === '') ? '—' : Number(v).toLocaleString('pt-BR'); }
+    function fmtAnos(v) { return (v == null || v === '') ? '—' : parseFloat(v).toFixed(1) + ' anos'; }
+    function fmtPct(v) {
+        if (v == null || v === '') return '—';
+        const n = parseFloat(v);
+        return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+    }
+
+    function abreviaUnidade(nome, sigla) {
+        if (sigla && sigla.trim()) return sigla.trim();
+        return nome.length > 14 ? nome.slice(0, 12) + '…' : nome;
+    }
+
+    function preencheIndicadores(d) {
+        document.getElementById('ind-total').textContent          = fmtNum(d.total_servidores);
+        document.getElementById('ind-crescimento').textContent    = fmtPct(d.crescimento_percentual);
+        document.getElementById('ind-aposentadoria').textContent  = fmtNum(d.proximos_aposentadoria);
+        document.getElementById('ind-capacitacoes').textContent   = fmtNum(d.capacitacoes_ano);
+        document.getElementById('ind-crescimento-cap').textContent = 'crescimento: ' + fmtPct(d.crescimento_capacitacoes);
+        document.getElementById('ind-tempo-medio').textContent    = fmtAnos(d.tempo_medio_servico);
+    }
+
+    let chartBarras = null;
+    let chartPizza  = null;
+    let dadosBarras = null;
+    let dadosPizza  = null;
+
+    function renderBarras(itens) {
+        const ctx = document.getElementById('grafico-barras').getContext('2d');
+        if (chartBarras) chartBarras.destroy();
+
+        const labels  = itens.map(i => abreviaUnidade(i.unidade, i.sigla));
+        const valores = itens.map(i => Number(i.total));
+        const nomes   = itens.map(i => i.unidade);
+
+        chartBarras = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Servidores',
+                    data: valores,
+                    backgroundColor: corPrimary(),
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: ctx => nomes[ctx[0].dataIndex],
+                            label: ctx => ' ' + fmtNum(ctx.parsed.y) + ' servidores'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: corTexto(),
+                            font: { size: 11 },
+                            maxRotation: 0,
+                            minRotation: 0,
+                        },
+                        grid: { color: corGrade() }
+                    },
+                    y: {
+                        ticks: { color: corTexto(), font: { size: 11 } },
+                        grid:  { color: corGrade() },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    const CORES_PIZZA = ['#002d5e','#22c55e','#f59e0b','#ef4444','#3b82f6','#8b5cf6'];
+
+    function renderPizza(itens) {
+        const ctx = document.getElementById('grafico-pizza').getContext('2d');
+        if (chartPizza) chartPizza.destroy();
+
+        const labels  = itens.map(i => i.status);
+        const valores = itens.map(i => Number(i.total));
+
+        chartPizza = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: CORES_PIZZA.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: isDark() ? '#1e293b' : '#ffffff',
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: corTexto(),
+                            padding: 16,
+                            font: { size: 12 },
+                            usePointStyle: true,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ' ' + fmtNum(ctx.parsed) + ' (' + ctx.label + ')'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const observer = new MutationObserver(() => {
+        if (dadosBarras) renderBarras(dadosBarras);
+        if (dadosPizza)  renderPizza(dadosPizza);
+    });
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    });
+
+    async function carregaIndicadores() {
+        try {
+            const r    = await fetch('/api/painel/indicadores');
+            const json = await r.json();
+            if (json.data) preencheIndicadores(json.data);
+        } catch (e) {
+            console.error('Painel — erro indicadores:', e);
+        }
+    }
+
+    async function carregaBarras() {
+        const loading = document.getElementById('loading-barras');
+        const wrap    = document.getElementById('wrap-barras');
+        try {
+            const r    = await fetch('/api/painel/servidores-por-unidade');
+            const json = await r.json();
+            dadosBarras = json.data || [];
+            loading.style.display = 'none';
+            wrap.style.display    = 'block';
+            renderBarras(dadosBarras);
+        } catch (e) {
+            loading.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Erro ao carregar dados.';
+            console.error('Painel — erro barras:', e);
+        }
+    }
+
+    async function carregaPizza() {
+        const loading = document.getElementById('loading-pizza');
+        const wrap    = document.getElementById('wrap-pizza');
+        try {
+            const r    = await fetch('/api/painel/distribuicao-status');
+            const json = await r.json();
+            dadosPizza = json.data || [];
+            loading.style.display = 'none';
+            wrap.style.display    = 'flex';
+            renderPizza(dadosPizza);
+        } catch (e) {
+            loading.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Erro ao carregar dados.';
+            console.error('Painel — erro pizza:', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        carregaIndicadores();
+        carregaBarras();
+        carregaPizza();
     });
 
 })();

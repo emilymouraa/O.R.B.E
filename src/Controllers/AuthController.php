@@ -171,7 +171,7 @@ class AuthController extends Controller
             return;
         }
 
-        header('Location: /dashboard');
+        header('Location: /painel');
         exit;
     }
 
