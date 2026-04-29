@@ -13,6 +13,9 @@ O.R.B.E/
 ├── src/
 │   ├── Controllers/
 │   │   ├── AuthController.php
+│   │   ├── BancoTalentosController.php
+│   │   ├── OrganogramaController.php
+│   │   ├── PainelController.php
 │   │   ├── UnidadeController.php
 │   │   └── UserController.php
 │   │
@@ -32,6 +35,8 @@ O.R.B.E/
 │   │
 │   ├── Models/
 │   │   ├── LogModel.php
+│   │   ├── BancoTalentosModel.php
+│   │   ├── OrganogramaModel.php
 │   │   ├── ServidorModel.php
 │   │   └── UserModel.php
 │   │

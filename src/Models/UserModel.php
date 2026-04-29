@@ -38,6 +38,54 @@ class UserModel extends Model
         return $user ?: null;
     }
 
+    public function findByIdWithUnidade(int $id): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                u.id,
+                u.nome,
+                u.email,
+                u.role,
+                u.ativo,
+                u.servidor_id,
+                TO_CHAR(u.created_at, 'DD/MM/YYYY') AS data_cadastro,
+                s.ra,
+                s.cpf,
+                s.cargo,
+                s.patente,
+                s.situacao,
+                s.data_nascimento,
+                TO_CHAR(s.data_ingresso,          'DD/MM/YYYY') AS data_ingresso,
+                TO_CHAR(s.previsao_aposentadoria, 'DD/MM/YYYY') AS previsao_aposentadoria,
+                s.foto_url,
+                un.nome  AS unidade,
+                un.sigla AS unidade_sigla,
+                un.estado
+            FROM users u
+            LEFT JOIN servidores s  ON s.id  = u.servidor_id
+            LEFT JOIN unidades   un ON un.id = s.unidade_id
+            WHERE u.id = :id
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $id]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $user ?: null;
+    }
+ 
+    public function updateFotoUrl(int $servidorId, string $url): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE servidores
+            SET foto_url   = :foto_url,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            'foto_url' => $url,
+            'id'       => $servidorId,
+        ]);
+    }
+
     public function create(array $data): bool
     {
         $stmt = $this->db->prepare("
