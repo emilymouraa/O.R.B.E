@@ -11,7 +11,6 @@ require __DIR__ . '/../layout/sidebar.php';
 ?>
 
     <div class="main-content">
-        <!-- ── Cabeçalho da página ──────────────────────────────────── -->
         <header class="header-section">
             <div class="title-group">
                 <h1>Gestão de Usuários</h1>
@@ -25,7 +24,6 @@ require __DIR__ . '/../layout/sidebar.php';
             <?php endif; ?>
         </header>
 
-        <!-- ── Filtros em linha ─────────────────────────────────────── -->
         <section class="filters-container">
             <div class="filter-group">
                 <input type="text" id="filtro-search" placeholder="Buscar por nome ou e-mail...">
@@ -52,7 +50,6 @@ require __DIR__ . '/../layout/sidebar.php';
             </div>
         </section>
 
-        <!-- ── Tabela ───────────────────────────────────────────────── -->
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -78,10 +75,8 @@ require __DIR__ . '/../layout/sidebar.php';
             <div class="pagination" id="paginacao"></div>
         </div>
 
-        <!-- ── Botão de tema fixo ───────────────────────────────────── -->
         <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 
-        <!-- ── Modal de Cadastro ────────────────────────────────────── -->
         <div id="modalCadastro" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
             <div class="modal-content">
                 <div class="modal-header">

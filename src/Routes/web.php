@@ -58,8 +58,6 @@ $router->add('GET', '/dashboard', function () {
     require __DIR__ . '/../Views/dashboard/home.php';
 });
 
-// Protegida por AuthMiddleware + RoleMiddleware (somente admin).
-// GET /api/users?page=1&limit=10&search=...&role=...&ativo=...&unidade_id=...
 $router->add('GET', '/api/users', function () use ($conn) {
     (new UserController($conn))->index();
 });
@@ -74,8 +72,10 @@ $router->add('GET', '/api/organograma/hierarquia-usuarios/gestor', function () u
     (new OrganogramaController($conn))->usuariosPorGestor();
 });
 
-// Adicionadas para suportar a sidebar de navegação.
-// Todas verificam sessão e redirecionam para /login se não autenticado.
+$router->add('POST', '/api/perfil/foto', function () use ($conn) {
+    (new UserController($conn))->uploadFoto();
+});
+
 $rotasProtegidas = [
     '/usuarios'        => 'dashboard/home.php',
     '/perfil'          => 'dashboard/perfil.php',
@@ -117,4 +117,8 @@ $router->add('GET', '/api/painel/servidores-por-unidade', function () use ($conn
  
 $router->add('GET', '/api/painel/distribuicao-status', function () use ($conn) {
     (new PainelController($conn))->distribuicaoStatus();
+});
+
+$router->add('GET', '/api/perfil', function () use ($conn) {
+    (new UserController($conn))->perfil();
 });
