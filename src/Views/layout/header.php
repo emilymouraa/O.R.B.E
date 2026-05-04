@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+
 $pageTitle = $pageTitle ?? 'ORBE';
 $bodyClass = $bodyClass ?? '';
 ?>

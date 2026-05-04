@@ -1685,3 +1685,197 @@ input[type="password"] {
     background: rgba(58,124,255,.12);
     border-color: rgba(58,124,255,.25);
 }
+
+/* 🔹 CONTAINER */
+.gc-section {
+    margin-top: 1.5rem;
+}
+
+/* GRID */
+.gc-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+}
+
+/* CARD */
+.gc-card {
+    position: relative;
+    overflow: hidden;
+
+    background: var(--card);
+    color: var(--text);
+
+    border-radius: 16px;
+    padding: 20px;
+
+    border: 1px solid var(--border);
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    transition: 0.2s;
+}
+
+/* HOVER */
+.gc-card:hover {
+    transform: translateY(-3px);
+}
+
+/* LINHA COLORIDA (lado esquerdo) */
+.gc-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 16px 0 0 16px;
+}
+
+/* CORES POR CARD */
+.gc-card:nth-child(1)::before {
+    background: #3b82f6;
+}
+
+.gc-card:nth-child(2)::before {
+    background: #22c55e;
+}
+
+.gc-card:nth-child(3)::before {
+    background: #a855f7;
+}
+
+.gc-card:nth-child(4)::before {
+    background: #f59e0b;
+}
+
+/* TEXTO PEQUENO */
+.gc-card span {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* VALOR GRANDE */
+.gc-card strong {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/* 🔹 FILTROS */
+.filters-container {
+    display: flex;
+    gap: 1rem;
+
+    margin-top: 24px;      /* 👈 espaço acima */
+    margin-bottom: 1.5rem;
+
+    padding: 1rem;
+
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    min-width: 220px;
+}
+
+/* ===== LISTA ===== */
+
+.gc-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 24px;
+}
+
+/* CARD */
+.gc-item {
+    background: var(--card);
+
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    padding: 22px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    transition: 0.2s ease;
+}
+
+.gc-item:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* HEADER */
+.gc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* TITULO */
+.gc-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* INFO */
+.gc-info {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+
+    font-size: 15px;
+    color: var(--muted);
+}
+
+.gc-info strong {
+    color: var(--text);
+}
+
+/* BADGES */
+.badge {
+    padding: 6px 12px;
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* CORES */
+.badge.curso {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+}
+
+.badge.certificacao {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+}
+
+.badge.especializacao {
+    background: rgba(147, 51, 234, 0.12);
+    color: #9333ea;
+}
+
+.badge.habilidade {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+}
