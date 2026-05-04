@@ -122,3 +122,7 @@ $router->add('GET', '/api/painel/distribuicao-status', function () use ($conn) {
 $router->add('GET', '/api/perfil', function () use ($conn) {
     (new UserController($conn))->perfil();
 });
+
+$router->add('GET', '/api/competencias', function () use ($conn) {
+    (new \App\Controllers\CompetenciaController($conn))->index();
+});
