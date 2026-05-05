@@ -21,10 +21,6 @@ require __DIR__ . '/../layout/header.php';
 
         <br>
 
-        <?php if (!empty($error)): ?>
-            <div class="error"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-
         <form method="POST" action="/redefinir-senha">
 
             <div class="form-group">

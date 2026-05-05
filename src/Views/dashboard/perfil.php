@@ -1,6 +1,5 @@
 <?php
 /*
- * Views/dashboard/perfil.php
  * Tela de perfil do usuário logado.
  * Dados carregados via GET /api/perfil.
  * Upload de foto via POST /api/perfil/foto (apenas admin).
@@ -12,7 +11,6 @@ require __DIR__ . '/../layout/sidebar.php';
 ?>
 <div class="main-content">
 
-    <!-- ── Cabeçalho ── -->
     <header class="header-section">
         <div class="title-group">
             <h1></i>Meu Perfil</h1>
@@ -23,13 +21,11 @@ require __DIR__ . '/../layout/sidebar.php';
         </button>
     </header>
 
-    <!-- ── Loading ── -->
     <div class="perfil-loading" id="perfilLoading">
         <i class="fas fa-spinner fa-spin"></i>
         <span>Carregando informações...</span>
     </div>
 
-    <!-- ── Erro ── -->
     <div class="perfil-feedback-error" id="perfilError" style="display:none">
         <i class="fas fa-circle-exclamation"></i>
         <p>Não foi possível carregar as informações do perfil.</p>
@@ -38,12 +34,9 @@ require __DIR__ . '/../layout/sidebar.php';
         </button>
     </div>
 
-    <!-- ── Conteúdo principal ── -->
     <div id="perfilContent" style="display:none">
 
-        <!-- ══ ZONA 1 — Faixa de identidade (crachá) ══ -->
         <div class="perfil-identity-card">
-            <!-- Avatar com upload -->
             <div class="perfil-avatar-wrap" id="avatarWrap">
                 <div class="perfil-avatar" id="perfilAvatar"></div>
                 <label class="perfil-avatar-upload" id="avatarUploadLabel" style="display:none" title="Alterar foto">
@@ -52,7 +45,6 @@ require __DIR__ . '/../layout/sidebar.php';
                 </label>
             </div>
 
-            <!-- Informações de identidade -->
             <div class="perfil-identity-info">
                 <p class="perfil-identity-ra" id="perfilRA">—</p>
                 <p class="perfil-identity-name" id="perfilNome">—</p>
@@ -60,14 +52,12 @@ require __DIR__ . '/../layout/sidebar.php';
                 <div class="perfil-identity-badges" id="perfilBadges"></div>
             </div>
 
-            <!-- Tempo de serviço -->
             <div class="perfil-tempo-servico" id="perfilTempoServico" style="display:none">
                 <span class="perfil-tempo-numero" id="tempoServicoAnos">—</span>
                 <span class="perfil-tempo-label">anos na PRF</span>
             </div>
         </div>
 
-        <!-- Preview de upload -->
         <div class="perfil-upload-preview" id="uploadPreview" style="display:none">
             <img id="previewImg" src="" alt="Preview">
             <div class="perfil-upload-actions">
@@ -79,10 +69,8 @@ require __DIR__ . '/../layout/sidebar.php';
             <p class="perfil-upload-hint">JPG, PNG ou WEBP · máx. 2 MB</p>
         </div>
 
-        <!-- ══ ZONA 2 — Grid de 3 cards ══ -->
         <div class="perfil-info-grid">
 
-            <!-- Card 1: Dados Funcionais -->
             <div class="perfil-info-card">
                 <div class="perfil-info-card-header">
                     <span class="perfil-info-icon perfil-info-icon--blue">

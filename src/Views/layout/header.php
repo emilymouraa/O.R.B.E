@@ -3,9 +3,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-
 $pageTitle = $pageTitle ?? 'ORBE';
 $bodyClass = $bodyClass ?? '';
+
+$_phpToast = null;
+if (!empty($_SESSION['toast'])) {
+    $_phpToast = $_SESSION['toast'];
+    unset($_SESSION['toast']);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br" data-theme="light">
@@ -18,3 +24,7 @@ $bodyClass = $bodyClass ?? '';
     <link rel="icon" href="/favicon.ico">
 </head>
 <body class="<?= htmlspecialchars($bodyClass) ?>">
+
+<?php if ($_phpToast): ?>
+<div id="php-toast-data" data-toast="<?= htmlspecialchars(json_encode($_phpToast)) ?>" style="display:none"></div>
+<?php endif; ?>

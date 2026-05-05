@@ -21,13 +21,6 @@ require __DIR__ . '/../layout/header.php';
         </div>
         <h2>Criar Conta</h2>
 
-        <?php if (!empty($error)): ?>
-            <div class="error"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-        <?php if (!empty($success)): ?>
-            <div class="success"><?= htmlspecialchars($success) ?></div>
-        <?php endif; ?>
-
         <form method="POST" action="/register">
             <div class="form-group">
                 <label for="name">Nome</label>
