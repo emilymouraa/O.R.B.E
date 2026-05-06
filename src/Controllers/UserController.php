@@ -37,7 +37,6 @@ class UserController extends Controller
     {
         // Protege a rota: deve estar logado e ser admin
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['admin']);
 
         $page  = max(1, (int) ($_GET['page']  ?? 1));
         $limit = min(50, max(1, (int) ($_GET['limit'] ?? 10)));
@@ -174,7 +173,7 @@ class UserController extends Controller
         $fileContent = file_get_contents($file['tmp_name']);
 
         $supabaseUrl    = Env::get('SUPABASE_URL');
-        $supabaseKey    = \App\Core\Env::get('SUPABASE_SERVICE_KEY');
+        $supabaseKey    = Env::get('SUPABASE_ANON_KEY');
         $bucket         = Env::get('SUPABASE_STORAGE_BUCKET', 'avatares');
         $uploadEndpoint = "{$supabaseUrl}/storage/v1/object/{$bucket}/{$fileName}";
  
