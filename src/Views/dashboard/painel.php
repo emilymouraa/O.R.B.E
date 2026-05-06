@@ -3,7 +3,7 @@
  * Views/dashboard/painel.php
  * Painel de Recursos Humanos da PRF com indicadores e gráficos.
  */
-$pageTitle = 'Painel de RH';
+$pageTitle = 'Painel de Monitoramento';
 $bodyClass = 'dashboard-page';
 require __DIR__ . '/../layout/header.php';
 require __DIR__ . '/../layout/sidebar.php';
