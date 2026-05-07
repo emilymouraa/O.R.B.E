@@ -8,7 +8,6 @@ require __DIR__ . '/../layout/sidebar.php';
 
 <div class="main-content">
 
-    <!-- 🔹 HEADER -->
     <header class="header-section">
         <div class="title-group">
             <h1>Gestão de Competências</h1>
@@ -16,7 +15,6 @@ require __DIR__ . '/../layout/sidebar.php';
         </div>
     </header>
 
-    <!-- 🔹 CARDS -->
     <section class="gc-cards">
 
         <div class="gc-card">
@@ -41,7 +39,6 @@ require __DIR__ . '/../layout/sidebar.php';
 
     </section>
 
-    <!-- 🔹 FILTROS -->
     <section class="filters-container">
 
         <div class="filter-group">
@@ -64,7 +61,6 @@ require __DIR__ . '/../layout/sidebar.php';
 
     </section>
 
-    <!-- 🔹 LISTA -->
     <section class="gc-section">
         <div id="lista-competencias" class="gc-lista">
 
@@ -82,7 +78,6 @@ require __DIR__ . '/../layout/sidebar.php';
 <script>
 let dadosOriginais = [];
 
-// 🔹 CARREGAR DADOS
 async function carregarCompetencias() {
     try {
         const res = await fetch('/api/competencias');
@@ -102,7 +97,6 @@ async function carregarCompetencias() {
     }
 }
 
-// 🔹 CARDS
 function atualizarCards(data) {
     document.getElementById('total').textContent = data.length;
 
@@ -116,7 +110,6 @@ function atualizarCards(data) {
         data.filter(c => c.tipo === 'especializacao').length;
 }
 
-// 🔹 LISTA
 function renderizarLista(data) {
     const container = document.getElementById('lista-competencias');
 
@@ -166,7 +159,6 @@ function renderizarLista(data) {
     `).join('');
 }
 
-// 🔹 FORMATADORES
 function formatarTipo(tipo) {
     switch (tipo) {
         case 'curso': return 'Curso';
@@ -182,7 +174,6 @@ function formatarData(data) {
     return new Date(data).toLocaleDateString('pt-BR');
 }
 
-// 🔹 FILTRO
 function filtrar() {
     const busca = document.getElementById('busca').value.toLowerCase();
     const tipo = document.getElementById('tipo').value;
@@ -202,11 +193,9 @@ function filtrar() {
     renderizarLista(filtrado);
 }
 
-// 🔹 EVENTOS
 document.getElementById('busca').addEventListener('input', filtrar);
 document.getElementById('tipo').addEventListener('change', filtrar);
 
-// 🔹 INIT
 carregarCompetencias();
 </script>
 

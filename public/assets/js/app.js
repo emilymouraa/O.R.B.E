@@ -831,3 +831,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 })();
+
+const _toastActive = new Set();
+
+function showToast(type, title, desc = '', duration = 3000) {
+    const key = `${type}::${title}`;
+    if (_toastActive.has(key)) return;
+    _toastActive.add(key);
+
+    const icons = { success: '✓', error: '!', warning: '⚠', info: 'i' };
+
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${icons[type] ?? 'i'}</div>
+        <div class="toast-body">
+            <div class="toast-title">${title}</div>
+            ${desc ? `<div class="toast-desc">${desc}</div>` : ''}
+        </div>
+        <button class="toast-close" aria-label="Fechar">×</button>
+        <div class="toast-progress" style="width:100%"></div>
+    `;
+
+    if (type === 'error') {
+        container.appendChild(toast);
+    } else {
+        container.prepend(toast);
+    }
+
+    const bar = toast.querySelector('.toast-progress');
+    bar.style.transition = `width ${duration}ms linear`;
+    requestAnimationFrame(() => requestAnimationFrame(() => bar.style.width = '0%'));
+    
+    const dismiss = () => {
+        if (toast.classList.contains('toast-removing')) return;
+        toast.classList.add('toast-removing');
+        _toastActive.delete(key);
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    };
+
+    toast.querySelector('.toast-close').addEventListener('click', dismiss);
+    const timer = setTimeout(dismiss, duration);
+    toast.querySelector('.toast-close').addEventListener('click', () => clearTimeout(timer));
+}
+
+const Toast = {
+    success: (title, desc, duration)       => showToast('success', title, desc, duration),
+    error:   (title, desc, duration = 5000) => showToast('error',   title, desc, duration),
+    warning: (title, desc, duration)       => showToast('warning', title, desc, duration),
+    info:    (title, desc, duration)       => showToast('info',    title, desc, duration),
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('php-toast-data');
+    if (!el) return;
+    const { type, title, desc, duration } = JSON.parse(el.dataset.toast);
+    showToast(type, title, desc ?? '', duration ?? 3000);
+    el.remove();
+});

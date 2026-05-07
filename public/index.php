@@ -1,6 +1,7 @@
 <?php
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+date_default_timezone_set('America/Sao_Paulo');
 
 /*
  * Arquivo de entrada principal da aplicação (Front Controller).
@@ -8,7 +9,7 @@ error_reporting(E_ALL);
  * inicializar variáveis de ambiente, estabelecer a conexão com o banco
  * de dados, registrar as rotas da aplicação e despachar a requisição
  * atual para o Router responsável.
- */
+*/
 
 session_start();
 

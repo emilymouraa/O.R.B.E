@@ -14,6 +14,7 @@ O.R.B.E/
 │   ├── Controllers/
 │   │   ├── AuthController.php
 │   │   ├── BancoTalentosController.php
+│   │   ├── CompetenciasController.php
 │   │   ├── OrganogramaController.php
 │   │   ├── PainelController.php
 │   │   ├── UnidadeController.php
@@ -28,6 +29,7 @@ O.R.B.E/
 │   │
 │   ├── Helpers/
 │   │   └── Response.php
+│   │   ├── Toasts.php
 │   │
 │   ├── Middleware/
 │   │   ├── AuthMiddleware.php
@@ -36,6 +38,7 @@ O.R.B.E/
 │   ├── Models/
 │   │   ├── LogModel.php
 │   │   ├── BancoTalentosModel.php
+│   │   ├── CompetenciaModel.php
 │   │   ├── OrganogramaModel.php
 │   │   ├── ServidorModel.php
 │   │   └── UserModel.php
