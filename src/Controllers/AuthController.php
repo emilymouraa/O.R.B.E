@@ -18,6 +18,7 @@ use App\Services\AuthService;
 use App\Models\UserModel;
 use App\Models\ServidorModel;
 use App\Core\Database;
+use App\Helpers\Toast;
 
 class AuthController extends Controller
 {
@@ -123,9 +124,9 @@ class AuthController extends Controller
                 $this->jsonResponse(['error' => $result['error']]);
                 return;
             }
-            $error = $result['error'];
-            require __DIR__ . '/../Views/auth/register.php';
-            return;
+            Toast::error('Erro no cadastro', $result['error']);
+            header('Location: /register');
+            exit;
         }
 
         // Resposta de sucesso
@@ -138,8 +139,9 @@ class AuthController extends Controller
             return;
         }
 
-        $success = "Usuário criado com sucesso! RA: {$result['ra']} | Senha padrão: {$result['senha']}";
-        require __DIR__ . '/../Views/auth/register.php';
+        Toast::success('Usuário criado!', "RA: {$result['ra']} | Senha padrão: {$result['senha']}");
+        header('Location: /register');
+        exit;
     }
 
     /*
@@ -166,11 +168,12 @@ class AuthController extends Controller
         }
 
         if (isset($result['error'])) {
-            $error = $result['error'];
-            require __DIR__ . '/../Views/auth/login.php';
-            return;
+            Toast::error('Falha no login', $result['error'], 5000);
+            header('Location: /login');
+            exit;
         }
 
+        Toast::success("Bem-vindo!", 'Você está conectado a ORBE.');
         header('Location: /painel');
         exit;
     }
@@ -239,17 +242,20 @@ class AuthController extends Controller
     $result = $this->authService->resetPassword($password, $confirm);
 
     if (isset($result['error'])) {
-        $error = $result['error'];
-        require __DIR__ . '/../Views/auth/reset_password.php';
-        return;
+        Toast::error('Erro ao redefinir senha', $result['error'], 5000);
+        header('Location: /redefinir-senha');
+        exit;
     }
 
     // Limpa sessão de primeiro acesso
     unset($_SESSION['primeiro_acesso_ra']);
     unset($_SESSION['identidade_validada']);
-
+    unset($_SESSION['primeiro_acesso_ra']);
+    unset($_SESSION['identidade_validada']);
+    Toast::success('Senha definida com sucesso', 'Faça login com sua nova senha.');
     header('Location: /login');
     exit;
+
 }
 
     public function logout(): void
@@ -258,6 +264,7 @@ class AuthController extends Controller
             session_start();
         }
         session_destroy();
+        Toast::info('Sessão encerrada', 'Você saiu do sistema com segurança.');
         header('Location: /login');
         exit;
     }

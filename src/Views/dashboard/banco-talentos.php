@@ -58,7 +58,6 @@ require __DIR__ . '/../layout/sidebar.php';
 
     <section class="filters-container">
         <div class="filter-group bt-search-wrap">
-            <i class="fas fa-magnifying-glass bt-search-icon"></i>
             <input
                 type="text"
                 id="bt-search"
