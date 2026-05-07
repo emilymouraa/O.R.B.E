@@ -1,13 +1,9 @@
 /*
-|--------------------------------------------------------------------------
-| organograma.js — Redesign cinematic
-|--------------------------------------------------------------------------
 | - Admin centralizado, flutuando suave
 | - Gestores "explodem" de dentro do admin com stagger delay
 | - Usuários surgem do gestor clicado
 | - Linhas Bézier cúbicas animadas (stroke-dashoffset)
 | - Zoom via scroll/pinch mantido
-|--------------------------------------------------------------------------
 */
 
 const SVG_NS   = "http://www.w3.org/2000/svg";
@@ -20,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
   carregarAdmin();
 });
 
-/* ── FETCH ─────────────────────────────────────────────────────────────── */
 async function carregarAdmin() {
   const response = await fetch('/api/organograma/hierarquia-usuarios');
   const json     = await response.json();
@@ -28,7 +23,6 @@ async function carregarAdmin() {
   renderOrganograma(_adminData);
 }
 
-/* ── RENDER PRINCIPAL ──────────────────────────────────────────────────── */
 function renderOrganograma(admin) {
   const container = document.getElementById("organograma-root");
   container.innerHTML = `
@@ -55,7 +49,6 @@ function renderOrganograma(admin) {
     .addEventListener("click", toggleGestores);
 }
 
-/* ── TOGGLE GESTORES ────────────────────────────────────────────────────── */
 function toggleGestores() {
   const adminCard  = document.getElementById(`card-admin-${_adminData.id}`);
   const tree       = document.getElementById("org-tree");
@@ -75,7 +68,6 @@ function toggleGestores() {
     return;
   }
 
-  /* Pulsa o admin */
   adminCard.classList.add("pulsing");
   setTimeout(() => adminCard.classList.remove("pulsing"), 600);
 
@@ -92,26 +84,22 @@ function toggleGestores() {
   `).join("");
   levelGest.classList.remove("hidden");
 
-  /* Listeners */
   gestores.forEach(g => {
     document.getElementById(`card-gestor-${g.id}`)
       .addEventListener("click", () => toggleUsers(g.id));
   });
 
-  /* Linhas após animação */
   setTimeout(() => {
     atualizarSVGSize();
     desenharLinhasParaGestores();
   }, 500);
 }
 
-/* ── TOGGLE USUÁRIOS ────────────────────────────────────────────────────── */
 async function toggleUsers(gestorId) {
   const gestorCard = document.getElementById(`card-gestor-${gestorId}`);
   const levelUsers = document.getElementById("level-usuarios");
   const badge      = gestorCard?.querySelector(".expand-badge");
 
-  /* Recolhe se já expandido */
   if (_expandedGestorId === gestorId) {
     limparLinhas("gestor-line");
     const nodes = levelUsers.querySelectorAll(".org-node");
@@ -127,7 +115,6 @@ async function toggleUsers(gestorId) {
     return;
   }
 
-  /* Desmarca gestor anterior */
   if (_expandedGestorId !== null) {
     const prevCard  = document.getElementById(`card-gestor-${_expandedGestorId}`);
     const prevBadge = prevCard?.querySelector(".expand-badge");
@@ -141,7 +128,6 @@ async function toggleUsers(gestorId) {
   gestorCard?.classList.add("expanded");
   if (badge) badge.textContent = "−";
 
-  /* Busca usuários */
   const response = await fetch(`/api/organograma/hierarquia-usuarios/gestor?gestor_id=${gestorId}`);
   const json     = await response.json();
   const users    = json.data.children;
@@ -156,25 +142,41 @@ async function toggleUsers(gestorId) {
   setTimeout(() => {
     atualizarSVGSize();
     desenharLinhasParaUsuarios(gestorId, users);
-    /* Redesenha linhas admin→gestores (posições podem ter mudado) */
     desenharLinhasParaGestores();
   }, 500);
 }
 
-/* ── CARD HTML ──────────────────────────────────────────────────────────── */
 function cardHTML(pessoa, tipo) {
   const nome  = formatarNome(pessoa.nome);
   const badge = (tipo !== "user")
     ? `<div class="expand-badge">+</div>`
     : "";
+ 
+  const avatarInner = pessoa.avatar
+    ? `<img
+         src="${pessoa.avatar}"
+         alt="${nome}"
+         class="avatar-foto"
+         onerror="this.parentElement.innerHTML=avatarIniciais('${nome}','${pessoa.cor ?? '#1E3A8A'}')"
+       >`
+    : avatarIniciais(nome, pessoa.cor ?? '#1E3A8A');
+ 
   return `
     <div class="person-card ${tipo}" id="card-${tipo}-${pessoa.id}" data-expanded="false">
-      <div class="avatar-ring"><i class="fa fa-user"></i></div>
+      <div class="avatar-ring">${avatarInner}</div>
       <div class="person-name">${nome}</div>
       <div class="person-role">${pessoa.cargo_label}</div>
       ${badge}
     </div>
   `;
+}
+
+function avatarIniciais(nome, cor) {
+  const partes   = nome.trim().split(' ').filter(Boolean);
+  const iniciais = partes.length >= 2
+    ? partes[0][0].toUpperCase() + partes[partes.length - 1][0].toUpperCase()
+    : (partes[0]?.[0] ?? '?').toUpperCase();
+  return `<span class="avatar-iniciais" style="background:${cor}">${iniciais}</span>`;
 }
 
 function formatarNome(nomeCompleto) {
@@ -258,7 +260,6 @@ function desenharLinhasParaUsuarios(gestorId, users) {
   });
 }
 
-/* ── COLLAPSE ALL ───────────────────────────────────────────────────────── */
 function collapseAll(callback) {
   limparLinhas("admin-line");
   limparLinhas("gestor-line");
@@ -278,7 +279,6 @@ function collapseAll(callback) {
   }, 310);
 }
 
-/* ── SVG SIZE ───────────────────────────────────────────────────────────── */
 function atualizarSVGSize() {
   const tree = document.getElementById("org-tree");
   const svg  = document.getElementById("svg-lines");
@@ -287,7 +287,6 @@ function atualizarSVGSize() {
   svg.style.height = tree.scrollHeight + "px";
 }
 
-/* ── RESIZE OBSERVER ────────────────────────────────────────────────────── */
 let _resizeTimer = null;
 const _ro = new ResizeObserver(() => {
   clearTimeout(_resizeTimer);
@@ -310,14 +309,12 @@ const _ro = new ResizeObserver(() => {
   }, 80);
 });
 
-/* Inicia observer após render */
 document.addEventListener("DOMContentLoaded", () => {
   const tree = document.getElementById("org-tree");
   if (tree) _ro.observe(tree);
   atualizarSVGSize();
 });
 
-/* ── ZOOM (scroll + pinch) ──────────────────────────────────────────────── */
 function iniciarZoom() {
   const root    = document.getElementById("organograma-root");
   const wrapper = document.getElementById("org-zoom-wrapper");

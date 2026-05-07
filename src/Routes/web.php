@@ -86,7 +86,7 @@ $rotasProtegidas = [
 foreach ($rotasProtegidas as $uri => $rota) {
     $router->add('GET', $uri, function () use ($rota) {
         \App\Middleware\AuthMiddleware::handle();
-        if ($rota['toast']) {
+        if ($rota['toast'] && empty($_SESSION['toast'])) {
             \App\Helpers\Toast::set(
                 $rota['toast']['type'],
                 $rota['toast']['title'],
