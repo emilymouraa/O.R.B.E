@@ -333,3 +333,49 @@
 [data-theme="dark"] .avatar-ring {
   background: var(--input-bg);
 }
+
+/*
+ * ADIÇÃO ao public/assets/css/organograma.css
+ * ─────────────────────────────────────────────────────────────────
+ * Cole no final do arquivo organograma.css.
+ * Estas regras substituem visualmente o ícone genérico fa-user
+ * pelo avatar circular (foto ou iniciais) sem alterar o layout
+ * dos cards — dimensões fixas evitam reflow durante carregamento.
+ */
+
+/* ── Avatar-ring: mantém dimensão fixa independente do conteúdo ── */
+.avatar-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-foto {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    background: var(--surface, #e8edf3);
+}
+
+.avatar-iniciais {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: .5px;
+    user-select: none;
+    flex-shrink: 0;
+}

@@ -50,11 +50,9 @@ $router->add('POST', '/logout', function () {
     $controller = new App\Controllers\AuthController();
     $controller->logout();
 });
+
 $router->add('GET', '/dashboard', function () {
-    if (!isset($_SESSION['user'])) {
-        header('Location: /login');
-        exit;
-    }
+    \App\Middleware\AuthMiddleware::handle();
     require __DIR__ . '/../Views/dashboard/home.php';
 });
 
@@ -77,20 +75,31 @@ $router->add('POST', '/api/perfil/foto', function () use ($conn) {
 });
 
 $rotasProtegidas = [
-    '/usuarios'        => 'dashboard/home.php',
-    '/perfil'          => 'dashboard/perfil.php',
-    '/organograma'     => 'dashboard/organograma.php',
-    '/competencias'    => 'dashboard/competencias.php',
-    '/banco-talentos'  => 'dashboard/banco-talentos.php',
-    '/painel'          => 'dashboard/painel.php',
+    '/usuarios'       => ['view' => 'dashboard/home.php',          'toast' => null],
+    '/perfil'         => ['view' => 'dashboard/perfil.php',        'toast' => null],
+    '/organograma'    => ['view' => 'dashboard/organograma.php',   'toast' => ['type' => 'info',    'title' => 'Organograma',      'desc' => 'Exibindo a hierarquia atual.']],
+    '/competencias'   => ['view' => 'dashboard/competencias.php',  'toast' => ['type' => 'info',    'title' => 'Competências',     'desc' => 'Gerencie as competências cadastradas.']],
+    '/banco-talentos' => ['view' => 'dashboard/banco-talentos.php','toast' => ['type' => 'info',    'title' => 'Banco de Talentos','desc' => 'Visualize e filtre os servidores disponíveis.']],
+    '/painel'         => ['view' => 'dashboard/painel.php',        'toast' => ['type' => 'success', 'title' => 'Painel atualizado','desc' => 'Dados atualizados em ' . (new DateTime('now', new DateTimeZone('America/Sao_Paulo')))->format('H:i') . '.']],
 ];
+
+foreach ($rotasProtegidas as $uri => $rota) {
+    $router->add('GET', $uri, function () use ($rota) {
+        \App\Middleware\AuthMiddleware::handle();
+        if ($rota['toast'] && empty($_SESSION['toast'])) {
+            \App\Helpers\Toast::set(
+                $rota['toast']['type'],
+                $rota['toast']['title'],
+                $rota['toast']['desc']
+            );
+        }
+        require __DIR__ . '/../Views/' . $rota['view'];
+    });
+}
 
 foreach ($rotasProtegidas as $uri => $view) {
     $router->add('GET', $uri, function () use ($view) {
-        if (!isset($_SESSION['user'])) {
-            header('Location: /login');
-            exit;
-        }
+        \App\Middleware\AuthMiddleware::handle();
         require __DIR__ . '/../Views/' . $view;
     });
 }
