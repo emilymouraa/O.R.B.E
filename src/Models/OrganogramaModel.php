@@ -22,6 +22,7 @@ class OrganogramaModel extends Model
             $unidadeId = (int) $gestor['unidade_gestor_id'];
             $gestoresFormatados[] = [
                 'id'                  => (int) $gestor['id'],
+                'servidor_id'         => $gestor['servidor_id'] ? (int) $gestor['servidor_id'] : null, // ← CORRIGIDO
                 'tipo'                => 'gestor',
                 'nome'                => $gestor['nome'],
                 'nome_exibicao'       => $this->getNomeExibicao($gestor['nome']),
@@ -29,7 +30,7 @@ class OrganogramaModel extends Model
                 'cargo_label'         => 'Gestor',
                 'unidade_id'          => $unidadeId,
                 'unidade_nome'        => $gestor['unidade_nome'] ?? null,
-                'avatar'              => $gestor['foto_url'] ?? null, // ← alterado
+                'avatar'              => $gestor['foto_url'] ?? null,
                 'cor'                 => $this->getCorUnidade($unidadeId),
                 'expandido'           => false,
                 'quantidade_usuarios' => $this->countUsuariosPorUnidade($unidadeId),
@@ -37,16 +38,17 @@ class OrganogramaModel extends Model
             ];
         }
         return [
-            'id'           => (int) $admin['id'],
-            'tipo'         => 'admin',
-            'nome'         => $admin['nome'],
-            'nome_exibicao'=> $this->getNomeExibicao($admin['nome']),
-            'cargo'        => 'Administrador',
-            'cargo_label'  => 'Administrador',
-            'avatar'       => $admin['foto_url'] ?? null, // ← alterado
-            'cor'          => '#1E3A8A',
-            'expandido'    => false,
-            'children'     => $gestoresFormatados
+            'id'            => (int) $admin['id'],
+            'servidor_id'   => $admin['servidor_id'] ? (int) $admin['servidor_id'] : null, // ← CORRIGIDO
+            'tipo'          => 'admin',
+            'nome'          => $admin['nome'],
+            'nome_exibicao' => $this->getNomeExibicao($admin['nome']),
+            'cargo'         => 'Administrador',
+            'cargo_label'   => 'Administrador',
+            'avatar'        => $admin['foto_url'] ?? null,
+            'cor'           => '#1E3A8A',
+            'expandido'     => false,
+            'children'      => $gestoresFormatados
         ];
     }
     public function getUsuariosPorGestor(int $gestorId): ?array
@@ -60,21 +62,23 @@ class OrganogramaModel extends Model
         $usuariosFormatados = [];
         foreach ($usuarios as $usuario) {
             $usuariosFormatados[] = [
-                'id'          => (int) $usuario['id'],
-                'tipo'        => 'user',
-                'nome'        => $usuario['nome'],
+                'id'            => (int) $usuario['id'],
+                'servidor_id'   => $usuario['servidor_id'] ? (int) $usuario['servidor_id'] : null, // ← CORRIGIDO
+                'tipo'          => 'user',
+                'nome'          => $usuario['nome'],
                 'nome_exibicao' => $this->getNomeExibicao($usuario['nome']),
-                'cargo'       => $this->getCargoLabel($usuario['cargo'] ?? ''),
-                'cargo_label' => $this->getCargoLabel($usuario['cargo'] ?? ''),
-                'avatar'      => $usuario['foto_url'] ?? null, // ← alterado
-                'cor'         => $this->getCorUnidade($unidadeId),
-                'expandido'   => false,
-                'children'    => []
+                'cargo'         => $this->getCargoLabel($usuario['cargo'] ?? ''),
+                'cargo_label'   => $this->getCargoLabel($usuario['cargo'] ?? ''),
+                'avatar'        => $usuario['foto_url'] ?? null,
+                'cor'           => $this->getCorUnidade($unidadeId),
+                'expandido'     => false,
+                'children'      => []
             ];
         }
         return [
             'gestor' => [
                 'id'           => (int) $gestor['id'],
+                'servidor_id'  => $gestor['servidor_id'] ? (int) $gestor['servidor_id'] : null, // ← CORRIGIDO
                 'tipo'         => 'gestor',
                 'nome'         => $gestor['nome'],
                 'nome_exibicao'=> $this->getNomeExibicao($gestor['nome']),
@@ -82,7 +86,7 @@ class OrganogramaModel extends Model
                 'cargo_label'  => 'Gestor',
                 'unidade_id'   => $unidadeId,
                 'unidade_nome' => $gestor['unidade_nome'] ?? null,
-                'avatar'       => $gestor['foto_url'] ?? null, // ← alterado
+                'avatar'       => $gestor['foto_url'] ?? null,
                 'cor'          => $this->getCorUnidade($unidadeId),
                 'expandido'    => false
             ],

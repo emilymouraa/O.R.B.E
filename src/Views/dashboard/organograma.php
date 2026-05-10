@@ -34,5 +34,5 @@ require __DIR__ . '/../layout/sidebar.php';
 </div>
 
 <script src="/assets/js/organograma.js"></script>
-
+<?php require __DIR__ . '/../layout/partials/modal-perfil-servidor.php'; ?>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

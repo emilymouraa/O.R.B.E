@@ -37,15 +37,19 @@ $router->add('POST', '/login', function () use ($authController) {
 $router->add('GET', '/validar-identidade', function () use ($authController) {
     $authController->showValidateIdentity();
 });
+
 $router->add('POST', '/validar-identidade', function () use ($authController) {
     $authController->validateIdentity();
 });
+
 $router->add('GET', '/redefinir-senha', function () use ($authController) {
     $authController->showResetPassword();
 });
+
 $router->add('POST', '/redefinir-senha', function () use ($authController) {
     $authController->resetPassword();
 });
+
 $router->add('POST', '/logout', function () {
     $controller = new App\Controllers\AuthController();
     $controller->logout();
@@ -59,6 +63,19 @@ $router->add('GET', '/dashboard', function () {
 $router->add('GET', '/api/users', function () use ($conn) {
     (new UserController($conn))->index();
 });
+
+$router->add('GET', '/api/users/{id}', function () use ($conn) {
+    (new UserController($conn))->show((int) $_GET['id']);
+});
+
+$router->add('POST', '/api/users', function () use ($conn) {
+    (new UserController($conn))->store();
+});
+
+$router->add('PUT', '/api/users/{id}', function () use ($conn) {
+    (new UserController($conn))->update((int) $_GET['id']);
+});
+
 $router->add('GET', '/api/unidades', function () use ($conn) {
     (new \App\Controllers\UnidadeController($conn))->index();
 });
@@ -134,4 +151,8 @@ $router->add('GET', '/api/perfil', function () use ($conn) {
 
 $router->add('GET', '/api/competencias', function () use ($conn) {
     (new \App\Controllers\CompetenciaController($conn))->index();
+});
+
+$router->add('GET', '/api/servidores/{id}/perfil', function () use ($conn) {
+    (new \App\Controllers\ServidorController($conn))->perfil((int) $_GET['id']);
 });
