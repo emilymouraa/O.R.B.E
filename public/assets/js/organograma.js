@@ -163,7 +163,11 @@ function cardHTML(pessoa, tipo) {
  
   return `
     <div class="person-card ${tipo}" id="card-${tipo}-${pessoa.id}" data-expanded="false">
-      <div class="avatar-ring">${avatarInner}</div>
+      <div class="avatar-ring ${tipo !== 'user' ? '' : ''}" 
+        ${tipo === 'user' || tipo === 'gestor' || tipo === 'admin' ? `onclick="event.stopPropagation(); abrirPerfilServidor(${pessoa.servidor_id})" title="Ver perfil completo"` : ''}
+        style="cursor:pointer;">
+        ${avatarInner}
+      </div>
       <div class="person-name">${nome}</div>
       <div class="person-role">${pessoa.cargo_label}</div>
       ${badge}

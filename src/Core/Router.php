@@ -18,13 +18,22 @@ class Router {
 
     public function dispatch(string $uri, string $method): void {
         foreach ($this->routes as $r) {
-            if ($r['route'] === $uri && $r['method'] === $method) {
+            if ($r['method'] !== $method) continue;
+
+            $pattern = preg_replace('/\{[^}]+\}/', '([^/]+)', $r['route']);
+            $pattern = '#^' . $pattern . '$#';
+
+            if (preg_match($pattern, $uri, $matches)) {
+                preg_match_all('/\{([^}]+)\}/', $r['route'], $paramNames);
+                foreach ($paramNames[1] as $i => $name) {
+                    $_GET[$name] = $matches[$i + 1];
+                }
                 call_user_func($r['action']);
                 return;
             }
         }
-
+        
         http_response_code(404);
         echo json_encode(['error' => 'Rota não encontrada']);
-    }
+}
 }

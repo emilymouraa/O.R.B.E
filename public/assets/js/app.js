@@ -91,10 +91,17 @@ function badgePerfil(perfilRaw, perfilLabel) {
     return `<span class="badge ${cls}">${perfilLabel}</span>`;
 }
 
-function pillStatus(statusRaw) {
-    return statusRaw
-        ? `<span class="pill pill-active">Ativo</span>`
-        : `<span class="pill pill-inactive">Inativo</span>`;
+function pillSituacao(situacao) {
+    const map = {
+        ativo:                { cls: 'pill-active',    label: 'Ativo' },
+        afastado:             { cls: 'pill-afastado',  label: 'Afastado' },
+        aposentado:           { cls: 'pill-aposentado',label: 'Aposentado' },
+        licenca_maternidade:  { cls: 'pill-licenca',   label: 'Licença Maternidade' },
+        desligado:            { cls: 'pill-desligado', label: 'Desligado' },
+        outros:               { cls: 'pill-outros',    label: 'Outros' },
+    };
+    const s = map[situacao] ?? { cls: 'pill-outros', label: situacao };
+    return `<span class="pill ${s.cls}">${s.label}</span>`;
 }
 
 // ── Renderiza linhas da tabela ────────────────────────────────────
@@ -111,21 +118,18 @@ function renderTabela(users) {
     }
     tbody.innerHTML = users.map(u => `
         <tr>
-            <td><strong>${u.nome}</strong></td>
+            <td><span class="link-perfil-servidor" style="cursor:pointer;font-weight:600;" onclick="abrirPerfilServidor(${u.servidor_id})">${u.nome}</span></td>
             <td>${u.email}</td>
             <td>${badgePerfil(u.perfil_raw, u.perfil)}</td>
             <td>${u.unidade ?? '—'}</td>
-            <td>${pillStatus(u.status_raw)}</td>
+            <td>${pillSituacao(u.situacao)}</td>
             <td>${u.data_cadastro}</td>
             <td class="actions">
-                <button class="btn-icon btn-edit"   title="Editar"  onclick="editarUsuario(${u.id})">
+                <button class="btn-icon btn-edit" title="Editar" onclick="editarUsuario(${u.id})">
                     <i class="fas fa-pencil-alt"></i>
                 </button>
-                <button class="btn-icon btn-delete" title="Excluir" onclick="excluirUsuario(${u.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
+                </td>
+            </tr>
     `).join('');
 }
 
@@ -165,7 +169,7 @@ async function carregarUsuarios() {
         limit: state.limit,
         ...(state.search     && { search:     state.search }),
         ...(state.role       && { role:       state.role }),
-        ...(state.ativo      && { ativo:      state.ativo }),
+        ...(state.situacao   && { situacao:   state.situacao }),
         ...(state.unidade_id && { unidade_id: state.unidade_id }),
     });
 
@@ -198,7 +202,7 @@ async function carregarUnidades() {
         const json = await res.json();
 
         // Popula tanto o filtro da tabela quanto o select do modal
-        [selUnidade, document.getElementById('m-unidade')].forEach(sel => {
+        [selUnidade, document.getElementById('m-unidade'), document.getElementById('edit-unidade')].forEach(sel => {
             if (!sel) return;
             // Remove opções antigas (exceto a primeira placeholder)
             while (sel.options.length > 1) sel.remove(1);
@@ -233,23 +237,106 @@ if (inputSearch) {
         }, 400);
     });
 }
+
 if (selRole) {
     selRole.addEventListener('change', () => { state.role = selRole.value; state.page = 1; carregarUsuarios(); });
 }
+
 if (selAtivo) {
-    selAtivo.addEventListener('change', () => { state.ativo = selAtivo.value; state.page = 1; carregarUsuarios(); });
+    selAtivo.addEventListener('change', () => { state.situacao = selAtivo.value; state.page = 1; carregarUsuarios(); });
 }
+
 if (selUnidade) {
     selUnidade.addEventListener('change', () => { state.unidade_id = selUnidade.value; state.page = 1; carregarUsuarios(); });
 }
 
-// ── Placeholders de ação ──────────────────────────────────────────
-function editarUsuario(id)  { console.log('Editar usuário:', id); }
-function excluirUsuario(id) { console.log('Excluir usuário:', id); }
+async function editarUsuario(id) {
+    try {
+        const res = await fetch(`${BASE_URL}/api/users/${id}`);
+        if (!res.ok) throw new Error('Erro ao buscar usuário');
+        const json = await res.json();
+        const u = json.data;
 
-// ─────────────────────────────────────────────────────────────────
+        const avatarEl = document.getElementById('editAvatar');
+        if (u.foto_url) {
+            avatarEl.innerHTML = `<img src="${u.foto_url}" alt="${u.nome}" class="perfil-avatar-img">`;
+        } else {
+            avatarEl.textContent = u.nome.trim().split(' ')
+                .filter(Boolean).slice(0, 2)
+                .map(w => w[0].toUpperCase()).join('');
+        }
+        document.getElementById('editRA').textContent    = u.ra      ?? '—';
+        document.getElementById('editNome').textContent  = u.nome;
+        document.getElementById('editCargo').textContent = u.cargo_raw ?? '—';
+        document.getElementById('edit-id').value          = u.id;
+        document.getElementById('edit-servidor-id').value = u.servidor_id ?? '';
+        document.getElementById('edit-nome').value      = u.nome;
+        document.getElementById('edit-email').value     = u.email;
+        document.getElementById('edit-cpf').value       = u.cpf ?? '';
+        document.getElementById('edit-cargo').value     = u.cargo_raw   ?? '';
+        document.getElementById('edit-role').value      = u.perfil_raw  ?? 'user';
+        document.getElementById('edit-situacao').value  = u.situacao    ?? 'ativo';
+        document.getElementById('edit-data-nascimento').value      = brParaIso(u.data_nascimento);
+        document.getElementById('edit-data-ingresso').value        = brParaIso(u.data_ingresso);
+        document.getElementById('edit-previsao-aposentadoria').value = brParaIso(u.previsao_aposentadoria);
+        document.getElementById('edit-unidade').value = u.unidade_id ?? '';
+
+        setFeedbackEdicao('', '');
+        document.getElementById('modalEdicao').classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+    } catch (err) {
+        console.error(err);
+        alert('Não foi possível carregar os dados do usuário.');
+    }
+}
+
+function brParaIso(dataStr) {
+    if (!dataStr) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return dataStr;
+    const [d, m, y] = dataStr.split('/');
+    return `${y}-${m}-${d}`;
+}
+
+function calcularPrevisaoAposentadoria(dataNascimento, dataIngresso) {
+    if (!dataNascimento || !dataIngresso) return '';
+
+    const nasc    = new Date(dataNascimento);
+    const ingresso = new Date(dataIngresso);
+
+    const porIdade = new Date(nasc);
+    porIdade.setFullYear(porIdade.getFullYear() + 55);
+
+    const porTempo = new Date(ingresso);
+    porTempo.setFullYear(porTempo.getFullYear() + 25);
+
+    const maior = porIdade > porTempo ? porIdade : porTempo;
+    return maior.toISOString().split('T')[0];
+}
+
+function closeModalEdicao() {
+    document.getElementById('modalEdicao').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('formEdicao').reset();
+    setFeedbackEdicao('', '');
+}
+
+function setFeedbackEdicao(msg, tipo) {
+    const el = document.getElementById('feedbackEdicao');
+    if (!el) return;
+    el.textContent = msg;
+    el.className   = 'feedback-msg' + (tipo ? ` ${tipo}` : '');
+    el.style.display = msg ? 'block' : 'none';
+}
+
+const modalEdicao = document.getElementById('modalEdicao');
+if (modalEdicao) {
+    modalEdicao.addEventListener('click', function (e) {
+        if (e.target === this) closeModalEdicao();
+    });
+}
+
 // ── MODAL DE CADASTRO ─────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────
 
 const modal          = document.getElementById('modalCadastro');
 const formUsuario    = document.getElementById('formUsuario');
@@ -333,6 +420,32 @@ if (inputCpf) {
     });
 }
 
+const inputNascCad    = document.getElementById('m-data-nascimento');
+const inputAdmCad     = document.getElementById('m-data-admissao');
+const inputPrevCad    = document.getElementById('m-previsao-aposentadoria');
+
+function atualizarPrevisaoCadastro() {
+    if (!inputNascCad || !inputAdmCad || !inputPrevCad) return;
+    const prev = calcularPrevisaoAposentadoria(inputNascCad.value, inputAdmCad.value);
+    inputPrevCad.value = prev;
+}
+
+if (inputNascCad) inputNascCad.addEventListener('change', atualizarPrevisaoCadastro);
+if (inputAdmCad)  inputAdmCad.addEventListener('change',  atualizarPrevisaoCadastro);
+
+const inputNascEdit = document.getElementById('edit-data-nascimento');
+const inputAdmEdit  = document.getElementById('edit-data-ingresso');
+const inputPrevEdit = document.getElementById('edit-previsao-aposentadoria');
+
+function atualizarPrevisaoEdicao() {
+    if (!inputNascEdit || !inputAdmEdit || !inputPrevEdit) return;
+    const prev = calcularPrevisaoAposentadoria(inputNascEdit.value, inputAdmEdit.value);
+    inputPrevEdit.value = prev;
+}
+
+if (inputNascEdit) inputNascEdit.addEventListener('change', atualizarPrevisaoEdicao);
+if (inputAdmEdit)  inputAdmEdit.addEventListener('change',  atualizarPrevisaoEdicao);
+
 /** Fecha o modal ao clicar no backdrop */
 if (modal) {
     modal.addEventListener('click', function (e) {
@@ -407,12 +520,9 @@ if (formUsuario) {
             const msg = json.mensagem
                 ?? `Usuário criado! RA: ${json.ra ?? '—'} | Senha padrão: ${json.senha ?? '—'}`;
 
-            setFeedback(msg, 'msg-success');
-
-            setTimeout(() => {
-                closeModal();
-                carregarUsuarios(); // Atualiza a tabela automaticamente
-            }, 2500);
+            closeModal();
+            carregarUsuarios();
+            Toast.success('Usuário cadastrado!', json.mensagem ?? `RA: ${json.ra ?? '—'} | Senha padrão: ${json.senha ?? '—'}`);
 
         } catch (err) {
             console.error(err);
@@ -422,6 +532,51 @@ if (formUsuario) {
                 btnSalvar.disabled = false;
                 btnSalvar.innerHTML = '<i class="fas fa-save"></i> Salvar Usuário';
             }
+        }
+    });
+}
+
+const formEdicao = document.getElementById('formEdicao');
+if (formEdicao) {
+    formEdicao.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSalvarEdicao');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+        const id = document.getElementById('edit-id').value;
+
+        const payload = {
+            nome:                   document.getElementById('edit-nome').value.trim(),
+            email:                  document.getElementById('edit-email').value.trim(),
+            cpf:                    document.getElementById('edit-cpf').value.replace(/\D/g, ''),
+            cargo:                  document.getElementById('edit-cargo').value,
+            role:                   document.getElementById('edit-role').value,
+            situacao:               document.getElementById('edit-situacao').value,
+            unidade_id:             document.getElementById('edit-unidade').value,
+            data_nascimento:        document.getElementById('edit-data-nascimento').value || null,
+            data_ingresso:          document.getElementById('edit-data-ingresso').value   || null,
+            previsao_aposentadoria: document.getElementById('edit-previsao-aposentadoria').value || null,
+        };
+
+        try {
+            const res  = await fetch(`${BASE_URL}/api/users/${id}`, {
+                method:  'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? 'Erro ao salvar.');
+
+            closeModalEdicao();
+            carregarUsuarios();
+            Toast.success('Usuário atualizado!', 'As alterações foram salvas com sucesso.');
+
+        } catch (err) {
+            setFeedbackEdicao(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
         }
     });
 }
@@ -896,3 +1051,415 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(type, title, desc ?? '', duration ?? 3000);
     el.remove();
 });
+
+// ── Modal de Perfil do Servidor ───────────────────────────────────
+let _mpsServidorIdAtual = null;
+
+function mpsAltTab(btnClicado, tabNome) {
+    document.querySelectorAll('.mps-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mps-tab-content').forEach(c => c.style.display = 'none');
+    btnClicado.classList.add('active');
+    document.getElementById(`mpsTab-${tabNome}`).style.display = 'block';
+}
+
+async function abrirPerfilServidor(servidorId) {
+    if (!servidorId) return;
+    _mpsServidorIdAtual = servidorId;
+
+    const modal = document.getElementById('modalPerfilServidor');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Reset visual
+    document.getElementById('mpsLoading').style.display  = 'flex';
+    document.getElementById('mpsError').style.display    = 'none';
+    document.querySelectorAll('.mps-tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.mps-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.mps-tab[data-tab="funcional"]').classList.add('active');
+
+    // Cabeçalho em branco enquanto carrega
+    document.getElementById('mpsRa').textContent    = '—';
+    document.getElementById('mpsNome').textContent  = '—';
+    document.getElementById('mpsCargo').textContent = '—';
+    document.getElementById('mpsBadges').innerHTML  = '';
+    document.getElementById('mpsTempoServico').style.display = 'none';
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/servidores/${servidorId}/perfil`);
+        if (res.status === 401) { window.location.href = `${BASE_URL}/login`; return; }
+        if (res.status === 403) {
+            mpsMostrarErro();
+            return;
+        }
+        if (!res.ok) throw new Error('Erro na API');
+        const json = await res.json();
+        mpsPreencherModal(json.data);
+    } catch (err) {
+        console.error(err);
+        mpsMostrarErro();
+    }
+}
+
+function mpsMostrarErro() {
+    document.getElementById('mpsLoading').style.display = 'none';
+    document.getElementById('mpsError').style.display   = 'flex';
+}
+
+function mpsRecarregar() {
+    if (_mpsServidorIdAtual) abrirPerfilServidor(_mpsServidorIdAtual);
+}
+
+function fecharPerfilServidor() {
+    document.getElementById('modalPerfilServidor').style.display = 'none';
+    document.body.style.overflow = '';
+    _mpsServidorIdAtual = null;
+}
+
+function mpsPreencherModal(d) {
+    // ── Cabeçalho ──────────────────────────────────────────────────
+    const avatarEl = document.getElementById('mpsAvatar');
+    if (d.foto_url) {
+        avatarEl.innerHTML = `<img src="${d.foto_url}" alt="${d.nome}" class="perfil-avatar-img">`;
+    } else {
+        const iniciais = d.nome.trim().split(' ').filter(Boolean)
+            .slice(0, 2).map(w => w[0].toUpperCase()).join('');
+        avatarEl.textContent = iniciais;
+    }
+
+    document.getElementById('mpsRa').textContent    = d.ra    ?? '—';
+    document.getElementById('mpsNome').textContent  = d.nome  ?? '—';
+    document.getElementById('mpsCargo').textContent = [d.patente, mpsFormatarCargo(d.cargo)].filter(Boolean).join(' · ');
+    document.getElementById('mpsBadges').innerHTML  = mpsBadgeSituacao(d.situacao);
+
+    const anos = mpsAnosServico(d.data_ingresso);
+    if (anos !== null) {
+        document.getElementById('mpsTempoNum').textContent      = anos;
+        document.getElementById('mpsTempoServico').style.display = 'flex';
+    }
+
+    // ── Aba Funcional ───────────────────────────────────────────────
+    document.getElementById('mps-ra').textContent            = d.ra                       ?? '—';
+    document.getElementById('mps-cargo').textContent         = mpsFormatarCargo(d.cargo)  ?? '—';
+    document.getElementById('mps-patente').textContent       = d.patente                  ?? '—';
+    document.getElementById('mps-situacao').innerHTML        = mpsBadgeSituacao(d.situacao);
+    document.getElementById('mps-ingresso').textContent      = d.data_ingresso            ?? '—';
+    document.getElementById('mps-aposentadoria').textContent = d.previsao_aposentadoria   ?? '—';
+    document.getElementById('mps-unidade').textContent       = d.unidade                  ?? '—';
+    document.getElementById('mps-sigla').textContent         = d.unidade_sigla            ?? '—';
+    document.getElementById('mps-estado').textContent        = d.estado                   ?? '—';
+    document.getElementById('mps-unidade-tipo').textContent  = mpsFormatarTipoUnidade(d.unidade_tipo);
+    document.getElementById('mps-email').textContent         = d.email                    ?? '—';
+
+    document.getElementById('mps-salario').textContent        = d.salario_base
+        ? 'R$ ' + parseFloat(d.salario_base).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        : '—';
+    document.getElementById('mps-salario-desde').textContent  = d.salario_desde   ?? '—';
+    document.getElementById('mps-salario-motivo').textContent = mpsFormatarMotivoSalario(d.salario_motivo);
+
+    // Benefícios
+    const benEl = document.getElementById('mpsBeneficios');
+    if (d.beneficios && d.beneficios.length) {
+        benEl.innerHTML = d.beneficios.map(b => `
+            <div class="mps-beneficio-item">
+                <i class="${mpsBeneficioIcone(b.tipo)}" aria-hidden="true"></i>
+                <div>
+                    <span class="mps-beneficio-nome">${mpsFormatarTipoBeneficio(b.tipo)}</span>
+                    <span class="mps-beneficio-desc">${b.descricao ?? ''}</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        benEl.innerHTML = '<span class="mps-empty">Nenhum benefício cadastrado.</span>';
+    }
+
+    // ── Aba Trajetória ──────────────────────────────────────────────
+
+    // Movimentações
+    const movEl = document.getElementById('mpsMovimentacoes');
+    if (d.movimentacoes && d.movimentacoes.length) {
+        movEl.innerHTML = d.movimentacoes.map(m => `
+            <li class="mps-timeline-item">
+                <div class="mps-tl-dot mps-tl-dot--${m.tipo}">
+                    <i class="${mpsTipoMovIcone(m.tipo)}" aria-hidden="true"></i>
+                </div>
+                <div class="mps-tl-body">
+                    <span class="mps-tl-title">${m.descricao ?? mpsFormatarTipoMov(m.tipo)}</span>
+                    <span class="mps-tl-sub">
+                        ${m.unidade_origem ? m.unidade_origem + ' → ' : ''}${m.unidade_destino ?? '—'}
+                        · ${m.data_inicio}
+                    </span>
+                </div>
+            </li>
+        `).join('');
+    } else {
+        movEl.innerHTML = '<li class="mps-empty">Nenhuma movimentação registrada.</li>';
+    }
+
+    // Avaliações
+    const avalEl = document.getElementById('mpsAvaliacoes');
+    if (d.avaliacoes && d.avaliacoes.length) {
+        avalEl.innerHTML = d.avaliacoes.map(a => `
+            <div class="mps-avaliacao-item">
+                <div class="mps-avaliacao-pontuacao mps-pontuacao--${mpsPontuacaoClasse(a.pontuacao)}">
+                    ${a.pontuacao}<span>/100</span>
+                </div>
+                <div class="mps-avaliacao-info">
+                    <span class="mps-avaliacao-obs">${a.observacao ?? '—'}</span>
+                    <span class="mps-avaliacao-meta">
+                        ${a.data_avaliacao}
+                        ${a.avaliador ? '· Avaliado por ' + a.avaliador : ''}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        avalEl.innerHTML = '<span class="mps-empty">Nenhuma avaliação registrada.</span>';
+    }
+
+    // Competências
+    const compEl = document.getElementById('mpsCompetencias');
+    if (d.competencias && d.competencias.length) {
+        compEl.innerHTML = d.competencias.map(c => `
+            <div class="mps-competencia-tag mps-comp--${c.tipo}">
+                <i class="${mpsCompIcone(c.tipo)}" aria-hidden="true"></i>
+                <span>${c.nome}</span>
+                ${c.validade ? `<small>Válido até ${c.validade}</small>` : ''}
+            </div>
+        `).join('');
+    } else {
+        compEl.innerHTML = '<span class="mps-empty">Nenhuma competência registrada.</span>';
+    }
+
+    // Férias & Afastamentos
+    const ferEl = document.getElementById('mpsFerias');
+    if (d.ferias_afastamentos && d.ferias_afastamentos.length) {
+        ferEl.innerHTML = d.ferias_afastamentos.map(f => `
+            <div class="mps-ferias-item">
+                <span class="mps-ferias-tipo mps-ferias--${f.tipo}">
+                    <i class="${mpsFeriasIcone(f.tipo)}" aria-hidden="true"></i>
+                    ${mpsFormatarTipoAfastamento(f.tipo)}
+                </span>
+                <span class="mps-ferias-datas">
+                    ${f.data_inicio}${f.data_fim ? ' → ' + f.data_fim : ' → em andamento'}
+                    ${f.dias ? ' · ' + f.dias + ' dias' : ''}
+                </span>
+            </div>
+        `).join('');
+    } else {
+        ferEl.innerHTML = '<span class="mps-empty">Nenhum registro encontrado.</span>';
+    }
+
+    // PDI
+    const pdiWrap = document.getElementById('mpsPdiWrap');
+    const pdiEl   = document.getElementById('mpsPdi');
+    if (d.pdis && d.pdis.length) {
+        const pdi = d.pdis[0]; // exibe o mais recente
+        const totalAcoes     = pdi.acoes?.length ?? 0;
+        const acoesConc      = pdi.acoes?.filter(a => a.concluida).length ?? 0;
+        const pct            = totalAcoes ? Math.round((acoesConc / totalAcoes) * 100) : 0;
+
+        pdiEl.innerHTML = `
+            <div class="mps-pdi-card">
+                <div class="mps-pdi-header">
+                    <div>
+                        <span class="mps-pdi-objetivo">${pdi.cargo_objetivo ?? '—'}</span>
+                        <span class="mps-pdi-status mps-pdi-status--${pdi.status}">${mpsFormatarStatusPdi(pdi.status)}</span>
+                    </div>
+                    <span class="mps-pdi-meta">
+                        Responsável: ${pdi.responsavel ?? '—'} · Revisão: ${pdi.data_revisao ?? '—'}
+                    </span>
+                </div>
+                <div class="mps-pdi-progresso-label">
+                    <span>Progresso das ações</span><span>${acoesConc}/${totalAcoes} concluídas</span>
+                </div>
+                <div class="mps-pdi-barra">
+                    <div class="mps-pdi-barra-fill" style="width:${pct}%"></div>
+                </div>
+                <ul class="mps-pdi-acoes">
+                    ${(pdi.acoes ?? []).map(a => `
+                        <li class="${a.concluida ? 'concluida' : ''}">
+                            <i class="fas ${a.concluida ? 'fa-circle-check' : 'fa-circle'}" aria-hidden="true"></i>
+                            ${a.descricao}
+                            ${a.prazo ? `<small>Prazo: ${a.prazo}</small>` : ''}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+        pdiWrap.style.display = 'block';
+    } else {
+        pdiWrap.style.display = 'none';
+    }
+
+    // Exibe conteúdo
+    document.getElementById('mpsLoading').style.display = 'none';
+    document.getElementById('mpsTab-funcional').style.display = 'block';
+}
+
+// Fecha clicando fora do modal
+document.addEventListener('click', e => {
+    const modal = document.getElementById('modalPerfilServidor');
+    if (modal && e.target === modal) fecharPerfilServidor();
+});
+
+// ── Helpers do modal ─────────────────────────────────────────────
+function mpsAnosServico(dataIngresso) {
+    if (!dataIngresso) return null;
+    let d;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataIngresso)) {
+        const [dia, mes, ano] = dataIngresso.split('/');
+        d = new Date(`${ano}-${mes}-${dia}`);
+    } else {
+        d = new Date(dataIngresso);
+    }
+    const hoje = new Date();
+    let anos = hoje.getFullYear() - d.getFullYear();
+    if (hoje.getMonth() < d.getMonth() ||
+        (hoje.getMonth() === d.getMonth() && hoje.getDate() < d.getDate())) anos--;
+    return anos >= 0 ? anos : null;
+}
+
+function mpsBadgeSituacao(s) {
+    const map = {
+        ativo:               ['pill-active',    'Ativo'],
+        afastado:            ['pill-afastado',  'Afastado'],
+        aposentado:          ['pill-aposentado','Aposentado'],
+        licenca_maternidade: ['pill-licenca',   'Lic. Maternidade'],
+        desligado:           ['pill-desligado', 'Desligado'],
+    };
+    const [cls, label] = map[s] ?? ['pill-outros', s ?? '—'];
+    return `<span class="pill ${cls}">${label}</span>`;
+}
+
+function mpsFormatarCargo(c) {
+    const map = {
+        '3a_classe':      '3ª Classe',
+        '2a_classe':      '2ª Classe',
+        '1a_classe':      '1ª Classe',
+        'classe_especial':'Classe Especial',
+        'chefe_divisao':  'Chefe de Divisão',
+        'diretor_geral':  'Diretor-Geral',
+    };
+    return map[c] ?? c ?? '—';
+}
+
+function mpsFormatarTipoUnidade(t) {
+    const map = {
+        superintendencia: 'Superintendência',
+        delegacia:        'Delegacia',
+    };
+    return map[t] ?? t ?? '—';
+}
+
+function mpsFormatarMotivoSalario(m) {
+    const map = {
+        admissao:      'Admissão',
+        promocao:      'Promoção',
+        revisao_anual: 'Revisão Anual',
+    };
+    return map[m] ?? m ?? '—';
+}
+
+function mpsFormatarTipoBeneficio(t) {
+    const map = {
+        plano_saude:    'Plano de Saúde',
+        plano_odonto:   'Plano Odontológico',
+        vale_transporte:'Vale-Transporte',
+        vale_refeicao:  'Vale-Refeição',
+        auxilio_educacao:'Auxílio Educação',
+        seguro_vida:    'Seguro de Vida',
+        outros:         'Outros',
+    };
+    return map[t] ?? t ?? '—';
+}
+
+function mpsBeneficioIcone(t) {
+    const map = {
+        plano_saude:     'fas fa-heart-pulse',
+        plano_odonto:    'fas fa-tooth',
+        vale_transporte: 'fas fa-bus',
+        vale_refeicao:   'fas fa-utensils',
+        auxilio_educacao:'fas fa-graduation-cap',
+        seguro_vida:     'fas fa-shield',
+        outros:          'fas fa-circle-plus',
+    };
+    return map[t] ?? 'fas fa-circle-plus';
+}
+
+function mpsFormatarTipoMov(t) {
+    const map = {
+        transferencia: 'Transferência',
+        promocao:      'Promoção',
+        rebaixamento:  'Rebaixamento',
+        afastamento:   'Afastamento',
+        retorno:       'Retorno',
+        cessao:        'Cessão',
+        outros:        'Outros',
+    };
+    return map[t] ?? t ?? '—';
+}
+
+function mpsTipoMovIcone(t) {
+    const map = {
+        transferencia: 'fas fa-building',
+        promocao:      'fas fa-arrow-up',
+        rebaixamento:  'fas fa-arrow-down',
+        afastamento:   'fas fa-user-clock',
+        retorno:       'fas fa-rotate-left',
+        cessao:        'fas fa-handshake',
+        outros:        'fas fa-ellipsis',
+    };
+    return map[t] ?? 'fas fa-ellipsis';
+}
+
+function mpsFormatarTipoAfastamento(t) {
+    const map = {
+        ferias:               'Férias',
+        licenca_medica:       'Licença Médica',
+        licenca_maternidade:  'Licença Maternidade',
+        licenca_paternidade:  'Licença Paternidade',
+        afastamento_judicial: 'Afastamento Judicial',
+        cessao:               'Cessão',
+        outros:               'Outros',
+    };
+    return map[t] ?? t ?? '—';
+}
+
+function mpsFeriasIcone(t) {
+    const map = {
+        ferias:               'fas fa-umbrella-beach',
+        licenca_medica:       'fas fa-kit-medical',
+        licenca_maternidade:  'fas fa-baby',
+        licenca_paternidade:  'fas fa-baby',
+        afastamento_judicial: 'fas fa-gavel',
+        cessao:               'fas fa-handshake',
+        outros:               'fas fa-ellipsis',
+    };
+    return map[t] ?? 'fas fa-ellipsis';
+}
+
+function mpsCompIcone(t) {
+    const map = {
+        curso:          'fas fa-book',
+        certificacao:   'fas fa-certificate',
+        especializacao: 'fas fa-microscope',
+        habilidade:     'fas fa-star',
+    };
+    return map[t] ?? 'fas fa-circle';
+}
+
+function mpsPontuacaoClasse(p) {
+    if (p >= 85) return 'alto';
+    if (p >= 70) return 'medio';
+    return 'baixo';
+}
+
+function mpsFormatarStatusPdi(s) {
+    const map = {
+        nao_iniciado: 'Não iniciado',
+        em_andamento: 'Em andamento',
+        concluido:    'Concluído',
+        cancelado:    'Cancelado',
+    };
+    return map[s] ?? s ?? '—';
+}
