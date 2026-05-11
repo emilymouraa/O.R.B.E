@@ -363,4 +363,64 @@ class UserController extends Controller
             default               => ucfirst($situacao),
         };
     }
+
+    public function updatePerfil(): void
+    {
+        AuthMiddleware::handle();
+
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+        if (!$userId) {
+            http_response_code(401);
+            $this->jsonResponse(['error' => 'Não autenticado.']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        // Campos permitidos para auto-edição (sem role, cargo, unidade, situacao)
+        $allowed = ['nome', 'email', 'data_nascimento'];
+        $payload = array_intersect_key($data, array_flip($allowed));
+
+        if (empty($payload['nome']) || empty($payload['email'])) {
+            http_response_code(422);
+            $this->jsonResponse(['error' => 'Nome e e-mail são obrigatórios.']);
+            return;
+        }
+
+        if (!filter_var($payload['email'], FILTER_VALIDATE_EMAIL)) {
+            http_response_code(422);
+            $this->jsonResponse(['error' => 'E-mail inválido.']);
+            return;
+        }
+
+        // Garante que o e-mail não pertence a outro usuário
+        $existing = $this->model->findByEmail($payload['email']);
+        if ($existing && (int) $existing['id'] !== $userId) {
+            http_response_code(409);
+            $this->jsonResponse(['error' => 'Este e-mail já está em uso por outro usuário.']);
+            return;
+        }
+
+        $user = $this->model->findById($userId);
+        if (!$user) {
+            http_response_code(404);
+            $this->jsonResponse(['error' => 'Usuário não encontrado.']);
+            return;
+        }
+
+        $this->model->updatePerfil($userId, $payload);
+
+        // Atualiza data_nascimento no servidor vinculado
+        if ($user['servidor_id'] && !empty($payload['data_nascimento'])) {
+            $this->servidorModel->updateDataNascimento(
+                (int) $user['servidor_id'],
+                $payload['data_nascimento']
+            );
+        }
+
+        // Mantém sessão sincronizada
+        $_SESSION['user']['nome'] = $payload['nome'];
+
+        $this->jsonResponse(['success' => true, 'mensagem' => 'Perfil atualizado com sucesso.']);
+    }
 }

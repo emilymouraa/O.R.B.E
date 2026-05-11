@@ -247,4 +247,20 @@ class UserModel extends Model
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user ?: null;
     }
+    
+    public function updatePerfil(int $userId, array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET nome       = :nome,
+                email      = :email,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            'nome'  => $data['nome'],
+            'email' => $data['email'],
+            'id'    => $userId,
+        ]);
+    }
 }
