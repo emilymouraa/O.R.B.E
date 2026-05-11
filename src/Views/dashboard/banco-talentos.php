@@ -87,4 +87,5 @@ require __DIR__ . '/../layout/sidebar.php';
     <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 
 </div>
+<?php require __DIR__ . '/../layout/partials/modal-perfil-servidor.php'; ?>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

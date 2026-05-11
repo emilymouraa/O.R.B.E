@@ -8,6 +8,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\UserModel;
+use App\Models\ServidorModel;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
 use App\Core\Env;
@@ -15,24 +16,13 @@ use App\Core\Env;
 class UserController extends Controller
 {
     private UserModel $model;
+    private ServidorModel $servidorModel;
 
-    public function __construct(\PDO $conn)
-    {
-        $this->model = new UserModel($conn);
+    public function __construct(\PDO $conn) {
+        $this->model         = new UserModel($conn);
+        $this->servidorModel = new ServidorModel($conn);
     }
 
-    /*
-     * Lista usuários com paginação, filtros e contagem total.
-     * Rota: GET /api/users
-     *
-     * Query params aceitos:
-     *   page       int     (default: 1)
-     *   limit      int     (default: 10, máx: 50)
-     *   search     string  busca por nome ou e-mail
-     *   role       string  admin | gestor | user
-     *   ativo      bool    true | false
-     *   unidade_id int
-     */
     public function index(): void
     {
         // Protege a rota: deve estar logado e ser admin
@@ -44,7 +34,7 @@ class UserController extends Controller
         $filters = [
             'search'     => trim($_GET['search']      ?? ''),
             'role'       => trim($_GET['role']         ?? ''),
-            'ativo'      => $_GET['ativo']             ?? '',
+            'situacao'   => trim($_GET['situacao']     ?? ''),
             'unidade_id' => (int) ($_GET['unidade_id'] ?? 0) ?: null,
         ];
 
@@ -55,12 +45,14 @@ class UserController extends Controller
         $formatted = array_map(function (array $user): array {
             return [
                 'id'            => $user['id'],
+                'servidor_id'   => $user['servidor_id'] ? (int) $user['servidor_id'] : null, // ← adicionar
                 'nome'          => $user['nome'],
                 'email'         => $user['email'],
                 'perfil'        => $this->formatRole($user['role']),
                 'perfil_raw'    => $user['role'],
                 'unidade'       => $user['unidade'],
-                'status'        => $user['ativo'] ? 'Ativo' : 'Inativo',
+                'situacao'      => $user['situacao'],
+                'situacao_label'=> $this->formatSituacao($user['situacao']),
                 'status_raw'    => $user['ativo'],
                 'data_cadastro' => $user['data_cadastro'],
             ];
@@ -238,6 +230,137 @@ class UserController extends Controller
             'gestor' => 'Gestor',
             'user'   => 'Usuário',
             default  => $role,
+        };
+    }
+
+    public function show(int $id): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['admin']);
+
+        $user = $this->model->findByIdWithUnidade($id);
+        if (!$user) {
+            http_response_code(404);
+            $this->jsonResponse(['error' => 'Usuário não encontrado.']);
+            return;
+        }
+
+        $this->jsonResponse([
+            'data' => [
+                'id'                     => $user['id'],
+                'servidor_id'            => $user['servidor_id'],
+                'nome'                   => $user['nome'],
+                'email'                  => $user['email'],
+                'perfil_raw'             => $user['role'],
+                'cpf'                    => $user['cpf']              ?? null,
+                'cargo_raw'              => $user['cargo']            ?? null,
+                'ra'                     => $user['ra']               ?? null,
+                'patente'                => $user['patente']          ?? null,
+                'situacao'               => $user['situacao']         ?? 'ativo',
+                'unidade_id'             => $user['unidade_id']       ?? null,
+                'unidade'                => $user['unidade']          ?? null,
+                'data_nascimento'        => $user['data_nascimento']  ?? null,
+                'data_ingresso'          => $user['data_ingresso']    ?? null,
+                'previsao_aposentadoria' => $user['previsao_aposentadoria'] ?? null,
+                'foto_url'               => $user['foto_url']         ?? null,
+                'data_cadastro'          => $user['data_cadastro']    ?? null,
+            ],
+        ]);
+    }
+
+    public function store(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['admin']);
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+
+        $required = ['nome', 'email', 'cpf', 'cargo', 'role', 'unidade_id', 'situacao'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                http_response_code(422);
+                $this->jsonResponse(['error' => "Campo obrigatório ausente: {$field}"]);
+                return;
+            }
+        }
+
+        if ($this->model->findByEmail($data['email'])) {
+            http_response_code(409);
+            $this->jsonResponse(['error' => 'E-mail já cadastrado.']);
+            return;
+        }
+
+        if ($data['role'] === 'gestor' && $this->model->hasGestorInUnidade((int) $data['unidade_id'])) {
+            http_response_code(409);
+            $this->jsonResponse(['error' => 'Esta unidade já possui um gestor.']);
+            return;
+        }
+
+        $ra          = $this->servidorModel->getNextRa();
+        $servidorId  = $this->servidorModel->create([
+            'ra'              => $ra,
+            'nome'            => $data['nome'],
+            'cpf'             => $data['cpf'],
+            'cargo'           => $data['cargo'],
+            'unidade_id'      => (int) $data['unidade_id'],
+            'situacao'        => $data['situacao'],
+            'data_nascimento' => $data['data_nascimento'] ?? null,
+            'data_ingresso'   => $data['data_admissao']   ?? null,
+        ]);
+
+        $senha = password_hash($data['cpf'], PASSWORD_BCRYPT);
+        $this->model->create([
+            'servidor_id' => $servidorId,
+            'nome'        => $data['nome'],
+            'email'       => $data['email'],
+            'password'    => $senha,
+            'role'        => $data['role'],
+            'unidade_gestor_id' => (int) $data['unidade_id'], 
+        ]);
+
+        http_response_code(201);
+        $this->jsonResponse(['success' => true, 'mensagem' => 'Usuário cadastrado com sucesso.']);
+    }
+
+    public function update(int $id): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['admin']);
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $user = $this->model->findById($id);
+        if (!$user) {
+            http_response_code(404);
+            $this->jsonResponse(['error' => 'Usuário não encontrado.']);
+            return;
+        }
+
+        if ($data['role'] === 'gestor' && $this->model->hasGestorInUnidade((int) $data['unidade_id'], $id)) {
+            http_response_code(409);
+            $this->jsonResponse(['error' => 'Esta unidade já possui um gestor.']);
+            return;
+        }
+
+        $this->model->update($id, $data);
+
+        if ($user['servidor_id']) {
+            $this->servidorModel->update((int) $user['servidor_id'], $data);
+        }
+
+        $this->jsonResponse(['success' => true, 'mensagem' => 'Usuário atualizado com sucesso.']);
+    }
+
+    private function formatSituacao(string $situacao): string
+    {
+        return match ($situacao) {
+            'ativo'               => 'Ativo',
+            'afastado'            => 'Afastado',
+            'aposentado'          => 'Aposentado',
+            'licenca_maternidade' => 'Licença Maternidade',
+            'desligado'           => 'Desligado',
+            'outros'              => 'Outros',
+            default               => ucfirst($situacao),
         };
     }
 }
