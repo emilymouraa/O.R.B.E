@@ -94,4 +94,18 @@ class ServidorModel extends Model {
             'id'              => $servidorId,
         ]);
     }
+
+    public function updateDataNascimento(int $servidorId, string $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE servidores
+            SET data_nascimento = :data_nascimento,
+                updated_at      = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            'data_nascimento' => $data,
+            'id'              => $servidorId,
+        ]);
+    }
 }
