@@ -41,6 +41,7 @@
     │   │   ├── CompetenciaModel.php
     │   │   ├── OrganogramaModel.php
     │   │   ├── ServidorModel.php
+    │   │   ├── ServidorPerfilModel.php    
     │   │   └── UserModel.php
     │   │
     │   ├── Routes/

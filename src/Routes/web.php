@@ -91,6 +91,10 @@ $router->add('POST', '/api/perfil/foto', function () use ($conn) {
     (new UserController($conn))->uploadFoto();
 });
 
+$router->add('PUT',  '/api/perfil',      function () use ($conn) {
+    (new UserController($conn))->updatePerfil();
+});
+
 $rotasProtegidas = [
     '/usuarios'       => ['view' => 'dashboard/home.php',          'toast' => null],
     '/perfil'         => ['view' => 'dashboard/perfil.php',        'toast' => null],
@@ -140,7 +144,7 @@ $router->add('GET', '/api/painel/indicadores', function () use ($conn) {
 $router->add('GET', '/api/painel/servidores-por-unidade', function () use ($conn) {
     (new PainelController($conn))->servidoresPorUnidade();
 });
- 
+    
 $router->add('GET', '/api/painel/distribuicao-status', function () use ($conn) {
     (new PainelController($conn))->distribuicaoStatus();
 });
