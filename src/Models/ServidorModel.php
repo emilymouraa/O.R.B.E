@@ -54,21 +54,44 @@ class ServidorModel extends Model {
     }
 
     public function getNextRa(): string {
+        $stmt = $this->db->query("
+            SELECT MAX(CAST(SUBSTRING(ra, 4) AS INTEGER)) as max_ra
+            FROM {$this->table}
+            WHERE ra LIKE 'PRF%'
+        ");
 
-    $stmt = $this->db->query("
-        SELECT MAX(CAST(SUBSTRING(ra, 4) AS INTEGER)) as max_ra
-        FROM {$this->table}
-        WHERE ra LIKE 'PRF%'
-    ");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $numero = $result['max_ra'] ?? 0;
 
-    $numero = $result['max_ra'] ?? 0;
+        $novoNumero = $numero + 1;
 
-    $novoNumero = $numero + 1;
+        return 'PRF' . str_pad($novoNumero, 5, '0', STR_PAD_LEFT);
+    }
 
-    return 'PRF' . str_pad($novoNumero, 5, '0', STR_PAD_LEFT);
-}
-
-    
+    public function update(int $servidorId, array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE {$this->table}
+            SET nome             = :nome,
+                cpf              = :cpf,
+                cargo            = :cargo,
+                unidade_id       = :unidade_id,
+                situacao         = :situacao,
+                data_nascimento  = :data_nascimento,
+                data_ingresso    = :data_ingresso,
+                updated_at       = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            'nome'            => $data['nome'],
+            'cpf'             => $data['cpf'],
+            'cargo'           => $data['cargo'],
+            'unidade_id'      => $data['unidade_id'],
+            'situacao'        => $data['situacao'],
+            'data_nascimento' => $data['data_nascimento'] ?: null,
+            'data_ingresso'   => $data['data_ingresso']   ?: null,
+            'id'              => $servidorId,
+        ]);
+    }
 }

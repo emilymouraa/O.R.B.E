@@ -291,6 +291,28 @@ h2 { font-size: 1.25rem; color: var(--text); text-align: center; margin-bottom: 
 }
 .btn-theme-fixed:hover { transform: scale(1.1); }
 
+.perfil-field-input {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 14px;
+    transition: border 0.2s, box-shadow 0.2s;
+    margin-top: 4px;
+}
+.perfil-field-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 45, 94, 0.12);
+}
+.perfil-field-input[readonly] {
+    background: var(--surface);
+    cursor: not-allowed;
+    color: var(--muted);
+}
+
 /* Alias legado usado em login.php e register.php */
 .theme-toggle {
     position: fixed;
@@ -722,7 +744,7 @@ tbody tr:hover { background: var(--surface); }
     padding: 2rem;
     border-radius: 12px;
     width: 90%;
-    max-width: 700px;
+    max-width: 850px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -1965,4 +1987,560 @@ input[type="password"] {
 @media (max-width: 480px) {
     #toast-container { right: 1rem; left: 1rem; bottom: 1rem; }
     .toast { min-width: unset; max-width: 100%; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODAL PERFIL SERVIDOR — classes mps-*
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper do modal ─────────────────────────────────────────── */
+.modal-content--perfil {
+    max-width: 780px;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Cabeçalho ────────────────────────────────────────────────── */
+.modal-header--perfil {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 1.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+}
+
+.mps-identity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.mps-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.mps-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mps-identity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mps-ra {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+}
+
+.mps-nome {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    margin-bottom: 0;
+}
+
+.mps-cargo {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.mps-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.mps-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.mps-tempo-servico {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--primary-light);
+    border-radius: 8px;
+    padding: 6px 14px;
+}
+
+.mps-tempo-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.mps-tempo-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+/* ── Abas ─────────────────────────────────────────────────────── */
+.mps-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.75rem;
+    background: var(--white);
+    flex-shrink: 0;
+}
+
+.mps-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.mps-tab:hover { color: var(--text); }
+
+.mps-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 500;
+}
+
+/* ── Loading / Erro ───────────────────────────────────────────── */
+.mps-loading,
+.mps-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 1.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.mps-error { color: var(--danger); }
+
+/* ── Conteúdo das abas ────────────────────────────────────────── */
+.mps-tab-content {
+    padding: 1.5rem 1.75rem;
+    overflow-y: auto;
+    max-height: calc(90vh - 200px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mps-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* ── Subseção (aba 2) ─────────────────────────────────────────── */
+.mps-subsection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mps-subsection-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-align: left;
+    margin-bottom: 0;
+}
+
+.mps-empty {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* ── Benefícios ───────────────────────────────────────────────── */
+.mps-beneficios-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mps-beneficios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.6rem;
+}
+
+.mps-beneficio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+}
+
+.mps-beneficio-item i {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+.mps-beneficio-nome {
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    line-height: 1.3;
+}
+
+.mps-beneficio-desc {
+    color: var(--muted);
+    font-size: 0.76rem;
+    display: block;
+}
+
+/* ── Timeline de movimentações ────────────────────────────────── */
+.mps-timeline {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+}
+
+.mps-timeline-item {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 16px;
+    position: relative;
+}
+
+.mps-timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 30px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+}
+
+.mps-tl-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.mps-tl-dot--promocao    { background: #dcfce7; color: #166534; }
+.mps-tl-dot--transferencia { background: #dbeafe; color: #1e3a8a; }
+.mps-tl-dot--afastamento  { background: #fef3c7; color: #92400e; }
+.mps-tl-dot--retorno      { background: #f3e8ff; color: #6b21a8; }
+.mps-tl-dot--cessao       { background: #fce7f3; color: #9d174d; }
+.mps-tl-dot--rebaixamento { background: #fee2e2; color: #991b1b; }
+
+.mps-tl-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 4px;
+}
+
+.mps-tl-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.mps-tl-sub {
+    font-size: 0.77rem;
+    color: var(--muted);
+}
+
+/* ── Avaliações ───────────────────────────────────────────────── */
+.mps-avaliacoes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.mps-avaliacao-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.mps-avaliacao-pontuacao {
+    font-size: 1.3rem;
+    font-weight: 700;
+    min-width: 52px;
+    text-align: center;
+    flex-shrink: 0;
+    line-height: 1.1;
+}
+
+.mps-avaliacao-pontuacao span {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.mps-pontuacao--alto  { color: #166534; }
+.mps-pontuacao--medio { color: #92400e; }
+.mps-pontuacao--baixo { color: #991b1b; }
+
+.mps-avaliacao-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mps-avaliacao-obs {
+    font-size: 0.83rem;
+    color: var(--text);
+}
+
+.mps-avaliacao-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+/* ── Competências ─────────────────────────────────────────────── */
+.mps-competencias-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mps-competencia-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.mps-competencia-tag small {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-left: 2px;
+}
+
+.mps-comp--certificacao   { background: #dbeafe; color: #1e3a8a; border-color: #bfdbfe; }
+.mps-comp--especializacao { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+.mps-comp--habilidade     { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.mps-comp--curso          { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+
+/* ── Férias & Afastamentos ────────────────────────────────────── */
+.mps-ferias-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mps-ferias-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+}
+
+.mps-ferias-tipo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.mps-ferias--ferias              { color: #166534; }
+.mps-ferias--licenca_medica      { color: #991b1b; }
+.mps-ferias--licenca_maternidade { color: #9d174d; }
+.mps-ferias--licenca_paternidade { color: #1e3a8a; }
+.mps-ferias--afastamento_judicial{ color: #92400e; }
+.mps-ferias--cessao              { color: #6b21a8; }
+
+.mps-ferias-datas {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: right;
+}
+
+/* ── PDI ──────────────────────────────────────────────────────── */
+.mps-pdi-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mps-pdi-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mps-pdi-objetivo {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.mps-pdi-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.mps-pdi-status--em_andamento { background: #dbeafe; color: #1e3a8a; }
+.mps-pdi-status--concluido    { background: #dcfce7; color: #166534; }
+.mps-pdi-status--nao_iniciado { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.mps-pdi-status--cancelado    { background: #fee2e2; color: #991b1b; }
+
+.mps-pdi-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.mps-pdi-progresso-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.mps-pdi-barra {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.mps-pdi-barra-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.mps-pdi-acoes {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+}
+
+.mps-pdi-acoes li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--text);
+}
+
+.mps-pdi-acoes li.concluida {
+    color: var(--muted);
+    text-decoration: line-through;
+}
+
+.mps-pdi-acoes li i {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--primary);
+}
+
+.mps-pdi-acoes li.concluida i { color: var(--success); }
+
+.mps-pdi-acoes li small {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+/* ── Pills extras que o modal usa ─────────────────────────────── */
+.pill-afastado   { background: #fef3c7; color: #92400e; }
+.pill-aposentado { background: #f1f5f9; color: #475569; }
+.pill-licenca    { background: #fce7f3; color: #9d174d; }
+.pill-desligado  { background: #fee2e2; color: #991b1b; }
+.pill-outros     { background: var(--surface); color: var(--muted); }
+
+/* ── Link de perfil na tabela ─────────────────────────────────── */
+.link-perfil-servidor {
+    cursor: pointer;
+    color: var(--text);
+    transition: color 0.15s;
+}
+
+.link-perfil-servidor:hover {
+    color: var(--primary);
+    text-decoration: underline;
 }
