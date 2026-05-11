@@ -3,6 +3,7 @@
  * Tela de perfil do usuário logado.
  * Dados carregados via GET /api/perfil.
  * Upload de foto via POST /api/perfil/foto (apenas admin).
+ * Edição de perfil via PUT /api/perfil (todos os usuários).
  */
 $pageTitle = 'Meu Perfil · ORBE';
 $bodyClass = 'dashboard-page';
@@ -10,10 +11,9 @@ require __DIR__ . '/../layout/header.php';
 require __DIR__ . '/../layout/sidebar.php';
 ?>
 <div class="main-content">
-
     <header class="header-section">
         <div class="title-group">
-            <h1></i>Meu Perfil</h1>
+            <h1>Meu Perfil</h1>
             <p>Consulte suas informações cadastrais e de acesso</p>
         </div>
         <button class="btn-new" id="btnEditarPerfil" style="display:none">
@@ -35,7 +35,6 @@ require __DIR__ . '/../layout/sidebar.php';
     </div>
 
     <div id="perfilContent" style="display:none">
-
         <div class="perfil-identity-card">
             <div class="perfil-avatar-wrap" id="avatarWrap">
                 <div class="perfil-avatar" id="perfilAvatar"></div>
@@ -44,14 +43,12 @@ require __DIR__ . '/../layout/sidebar.php';
                     <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" style="display:none">
                 </label>
             </div>
-
             <div class="perfil-identity-info">
-                <p class="perfil-identity-ra" id="perfilRA">—</p>
-                <p class="perfil-identity-name" id="perfilNome">—</p>
+                <p class="perfil-identity-ra"    id="perfilRA">—</p>
+                <p class="perfil-identity-name"  id="perfilNome">—</p>
                 <p class="perfil-identity-cargo" id="perfilCargo">—</p>
                 <div class="perfil-identity-badges" id="perfilBadges"></div>
             </div>
-
             <div class="perfil-tempo-servico" id="perfilTempoServico" style="display:none">
                 <span class="perfil-tempo-numero" id="tempoServicoAnos">—</span>
                 <span class="perfil-tempo-label">anos na PRF</span>
@@ -70,7 +67,7 @@ require __DIR__ . '/../layout/sidebar.php';
         </div>
 
         <div class="perfil-info-grid">
-
+            <!-- Card 1: Dados Funcionais -->
             <div class="perfil-info-card">
                 <div class="perfil-info-card-header">
                     <span class="perfil-info-icon perfil-info-icon--blue">
@@ -170,10 +167,9 @@ require __DIR__ . '/../layout/sidebar.php';
                     </div>
                 </div>
             </div>
-
         </div><!-- /perfil-info-grid -->
 
-        <!-- ══ ZONA 3 — Segurança e Privacidade ══ -->
+        <!-- Segurança e Privacidade -->
         <div class="perfil-security-card">
             <div class="perfil-info-card-header">
                 <span class="perfil-info-icon perfil-info-icon--shield">
@@ -211,11 +207,105 @@ require __DIR__ . '/../layout/sidebar.php';
                 </div>
             </div>
         </div>
-
     </div><!-- /perfilContent -->
 
-    <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
+    <!-- ══════════════════════════════════════════════════
+         MODAL — Editar Perfil
+         Campos permitidos: nome, e-mail, data_nascimento
+         Campos bloqueados: RA, cargo, role, unidade, CPF
+    ══════════════════════════════════════════════════ -->
+    <div id="modalEditarPerfil" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditarPerfilTitulo">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h2 id="modalEditarPerfilTitulo">Editar Perfil</h2>
+                <button type="button" class="close-btn" onclick="fecharModalEditarPerfil()" aria-label="Fechar">&times;</button>
+            </div>
 
+            <!-- Mini identity card (somente leitura) -->
+            <div class="perfil-identity-card" id="epIdentityCard">
+                <div class="perfil-avatar-wrap">
+                    <div class="perfil-avatar" id="epAvatar"></div>
+                </div>
+                <div class="perfil-identity-info">
+                    <p class="perfil-identity-ra"    id="epRA">—</p>
+                    <p class="perfil-identity-name"  id="epNome">—</p>
+                    <p class="perfil-identity-cargo" id="epCargo">—</p>
+                </div>
+            </div>
+
+            <form id="formEditarPerfil" novalidate>
+                <div class="perfil-info-grid">
+
+                    <!-- Card editável: Dados Pessoais -->
+                    <div class="perfil-info-card">
+                        <div class="perfil-info-card-header">
+                            <span class="perfil-info-icon perfil-info-icon--yellow">
+                                <i class="fas fa-user-pen"></i>
+                            </span>
+                            <h3>Dados para editar</h3>
+                        </div>
+                        <div class="perfil-fields">
+                            <div class="perfil-field">
+                                <label class="perfil-field-label" for="ep-nome">Nome Completo *</label>
+                                <input type="text" id="ep-nome" class="perfil-field-input" required
+                                       placeholder="Digite o nome completo">
+                            </div>
+                            <div class="perfil-field">
+                                <label class="perfil-field-label" for="ep-email">E-mail Institucional *</label>
+                                <input type="email" id="ep-email" class="perfil-field-input" required
+                                       placeholder="email@prf.gov.br">
+                            </div>
+                            <div class="perfil-field">
+                                <label class="perfil-field-label" for="ep-data-nascimento">Data de Nascimento</label>
+                                <input type="date" id="ep-data-nascimento" class="perfil-field-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card somente leitura: Dados Funcionais -->
+                    <div class="perfil-info-card">
+                        <div class="perfil-info-card-header">
+                            <span class="perfil-info-icon perfil-info-icon--blue">
+                                <i class="fas fa-id-badge"></i>
+                            </span>
+                            <h3>Dados <br><small style="font-weight:400;font-size:.75rem;opacity:.6">(somente leitura)</small></h3>
+                        </div>
+                        <div class="perfil-fields">
+                            <div class="perfil-field">
+                                <span class="perfil-field-label">Registro (RA)</span>
+                                <span class="perfil-field-value" id="ep-det-ra">—</span>
+                            </div>
+                            <div class="perfil-field">
+                                <span class="perfil-field-label">Cargo</span>
+                                <span class="perfil-field-value" id="ep-det-cargo">—</span>
+                            </div>
+                            <div class="perfil-field">
+                                <span class="perfil-field-label">Unidade</span>
+                                <span class="perfil-field-value" id="ep-det-unidade">—</span>
+                            </div>
+                            <div class="perfil-field">
+                                <span class="perfil-field-label">Perfil de Acesso</span>
+                                <span class="perfil-field-value" id="ep-det-perfil">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /perfil-info-grid -->
+
+                <div id="feedbackEditarPerfil" class="feedback-msg" style="display:none"></div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="fecharModalEditarPerfil()">Cancelar</button>
+                    <button type="submit" class="btn-save" id="btnSalvarEditarPerfil">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- /modalEditarPerfil -->
+
+    <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 </div><!-- /main-content -->
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>
@@ -228,11 +318,23 @@ let _cpfReal    = '';
 let _cpfOculto  = '';
 let _cpfVisivel = false;
 
+// Cache dos dados do perfil para pré-preencher o modal
+let _perfilCache = null;
+
+/* ── Utilitários ─────────────────────────────────────────────── */
 function formatarDataBR(str) {
     if (!str) return '—';
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
     const [y, m, d] = str.split('-');
     return `${d}/${m}/${y}`;
+}
+
+// Converte "DD/MM/YYYY" → "YYYY-MM-DD" para inputs type="date"
+function dataBRparaISO(str) {
+    if (!str || str === '—') return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const [d, m, y] = str.split('/');
+    return `${y}-${m}-${d}`;
 }
 
 function calcularTempoServico(dataIngressoStr) {
@@ -275,6 +377,7 @@ function badgeSituacao(situacao) {
     return `<span class="pill ${cls}">${label}</span>`;
 }
 
+/* ── Carregar perfil ─────────────────────────────────────────── */
 async function carregarPerfil() {
     const loading = document.getElementById('perfilLoading');
     const content = document.getElementById('perfilContent');
@@ -289,8 +392,12 @@ async function carregarPerfil() {
         const res = await fetch(`${BASE_URL}/api/perfil`);
         if (res.status === 401) { window.location.href = `${BASE_URL}/login`; return; }
         if (!res.ok) throw new Error('Erro na API');
+
         const json = await res.json();
         const u    = json.data;
+
+        // Armazena em cache para o modal
+        _perfilCache = u;
 
         /* Avatar */
         const avatarEl = document.getElementById('perfilAvatar');
@@ -344,8 +451,11 @@ async function carregarPerfil() {
             document.getElementById('btnToggleCpf').style.display = 'inline-flex';
         }
 
+        /* Botão Editar Perfil — visível para todos os usuários autenticados */
+        btnEdit.style.display = 'flex';
+
+        /* Upload de foto apenas para admin */
         if (u.perfil_raw === 'admin') {
-            btnEdit.style.display = 'flex';
             document.getElementById('avatarUploadLabel').style.display = 'flex';
         }
 
@@ -359,6 +469,131 @@ async function carregarPerfil() {
     }
 }
 
+function abrirModalEditarPerfil() {
+    if (!_perfilCache) return;
+    const u = _perfilCache;
+
+    const avatarEl = document.getElementById('epAvatar');
+    if (u.foto_url) {
+        avatarEl.innerHTML = `<img src="${u.foto_url}" alt="${u.nome}" class="perfil-avatar-img">`;
+    } else {
+        const initials = u.nome.trim().split(' ')
+            .filter(Boolean).slice(0, 2)
+            .map(w => w[0].toUpperCase()).join('');
+        avatarEl.textContent = initials;
+    }
+    document.getElementById('epRA').textContent    = u.ra ?? '—';
+    document.getElementById('epNome').textContent  = u.nome;
+    document.getElementById('epCargo').textContent = [u.patente, u.cargo].filter(Boolean).join(' · ');
+
+    document.getElementById('ep-nome').value            = u.nome  ?? '';
+    document.getElementById('ep-email').value           = u.email ?? '';
+    document.getElementById('ep-data-nascimento').value = dataBRparaISO(u.data_nascimento);
+
+    document.getElementById('ep-det-ra').textContent      = u.ra      ?? '—';
+    document.getElementById('ep-det-cargo').textContent   = u.cargo   ?? '—';
+    document.getElementById('ep-det-unidade').textContent = u.unidade ?? '—';
+    document.getElementById('ep-det-perfil').innerHTML    = badgePerfil(u.perfil_raw, u.perfil);
+
+    const fb = document.getElementById('feedbackEditarPerfil');
+    fb.style.display = 'none';
+    fb.className     = 'feedback-msg';
+    fb.textContent   = '';
+
+    // ✅ Usa display:flex igual ao padrão do projeto
+    document.getElementById('modalEditarPerfil').style.display = 'flex';
+    document.getElementById('ep-nome').focus();
+}
+
+function fecharModalEditarPerfil() {
+    document.getElementById('modalEditarPerfil').style.display = 'none';
+}
+
+// Fecha ao clicar no backdrop
+document.getElementById('modalEditarPerfil').addEventListener('click', function (e) {
+    if (e.target === this) fecharModalEditarPerfil();
+});
+
+// Fecha com Escape
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.getElementById('modalEditarPerfil').classList.contains('active')) {
+        fecharModalEditarPerfil();
+    }
+});
+
+/* ── Submit do formulário de edição ─────────────────────────── */
+document.getElementById('formEditarPerfil').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSalvarEditarPerfil');
+    const fb  = document.getElementById('feedbackEditarPerfil');
+
+    const nome           = document.getElementById('ep-nome').value.trim();
+    const email          = document.getElementById('ep-email').value.trim();
+    const dataNascimento = document.getElementById('ep-data-nascimento').value;
+
+    // Validação mínima no cliente
+    if (!nome || !email) {
+        mostrarFeedback(fb, 'error', 'Nome e e-mail são obrigatórios.');
+        return;
+    }
+
+    btn.disabled    = true;
+    btn.innerHTML   = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    fb.style.display = 'none';
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/perfil`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ nome, email, data_nascimento: dataNascimento || null }),
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+            mostrarFeedback(fb, 'error', json.error ?? 'Erro ao salvar alterações.');
+            return;
+        }
+
+        mostrarFeedback(fb, 'success', json.mensagem ?? 'Perfil atualizado com sucesso!');
+
+        // Atualiza o cache e a tela sem precisar recarregar tudo
+        _perfilCache.nome           = nome;
+        _perfilCache.email          = email;
+        _perfilCache.data_nascimento = dataNascimento || null;
+
+        document.getElementById('perfilNome').textContent  = nome;
+        document.getElementById('detEmail').textContent    = email;
+        document.getElementById('detNascimento').textContent =
+            dataNascimento ? formatarDataBR(dataNascimento) : '—';
+        document.getElementById('epNome').textContent  = nome;
+
+        // Fecha o modal após breve delay para o usuário ver o sucesso
+        setTimeout(fecharModalEditarPerfil, 1400);
+
+    } catch (err) {
+        console.error(err);
+        mostrarFeedback(fb, 'error', 'Erro de conexão. Tente novamente.');
+    } finally {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
+    }
+});
+
+/* ── Utilitário de feedback inline ──────────────────────────── */
+function mostrarFeedback(el, tipo, msg) {
+    el.textContent   = msg;
+    el.className     = `feedback-msg feedback-msg--${tipo}`;
+    el.style.display = 'block';
+}
+
+/* ── Botão Editar Perfil ─────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnEditarPerfil').addEventListener('click', abrirModalEditarPerfil);
+});
+
+/* ── Toggle CPF ─────────────────────────────────────────────── */
 document.getElementById('btnToggleCpf').addEventListener('click', () => {
     _cpfVisivel = !_cpfVisivel;
     document.getElementById('detCPF').textContent = _cpfVisivel ? _cpfReal : _cpfOculto;
@@ -367,6 +602,7 @@ document.getElementById('btnToggleCpf').addEventListener('click', () => {
     icon.classList.toggle('fa-eye-slash',  _cpfVisivel);
 });
 
+/* ── Upload de foto ──────────────────────────────────────────── */
 document.getElementById('avatarInput').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
@@ -391,15 +627,19 @@ document.getElementById('btnCancelarFoto').addEventListener('click', () => {
 document.getElementById('btnSalvarFoto').addEventListener('click', async () => {
     const input = document.getElementById('avatarInput');
     if (!input.files[0]) return;
+
     const btn = document.getElementById('btnSalvarFoto');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
     const formData = new FormData();
     formData.append('foto', input.files[0]);
+
     try {
         const res  = await fetch(`${BASE_URL}/api/perfil/foto`, { method: 'POST', body: formData });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? 'Erro ao salvar foto.');
+
         const avatarEl = document.getElementById('perfilAvatar');
         avatarEl.innerHTML = `<img src="${json.foto_url}?t=${Date.now()}" alt="Avatar" class="perfil-avatar-img">`;
         document.getElementById('uploadPreview').style.display = 'none';
@@ -407,7 +647,7 @@ document.getElementById('btnSalvarFoto').addEventListener('click', async () => {
     } catch (err) {
         alert(err.message);
     } finally {
-        btn.disabled = false;
+        btn.disabled  = false;
         btn.innerHTML = '<i class="fas fa-check"></i> Salvar foto';
     }
 });
