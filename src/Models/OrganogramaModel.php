@@ -240,4 +240,68 @@ class OrganogramaModel extends Model
         ];
         return $cores[$unidadeId] ?? '#6B7280';
     }
+
+    public function getHierarquiaDoUsuario(int $userId): ?array
+    {
+        // Busca o próprio usuário
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.servidor_id, u.nome, u.unidade_gestor_id,
+                s.cargo, s.foto_url
+            FROM users u
+            LEFT JOIN servidores s ON s.id = u.servidor_id
+            WHERE u.id = :id AND u.ativo = true
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$user) return null;
+
+        $unidadeId = (int) $user['unidade_gestor_id'];
+
+        // Busca o gestor da unidade
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.servidor_id, u.nome, u.unidade_gestor_id,
+                un.nome AS unidade_nome, s.foto_url
+            FROM users u
+            LEFT JOIN unidades un ON un.id = u.unidade_gestor_id
+            LEFT JOIN servidores s ON s.id = u.servidor_id
+            WHERE u.role = 'gestor'
+            AND u.unidade_gestor_id = :unidade_id
+            AND u.ativo = true
+            LIMIT 1
+        ");
+        $stmt->execute(['unidade_id' => $unidadeId]);
+        $gestor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Busca o admin raiz
+        $admin = $this->getAdminRaiz();
+
+        return [
+            'usuario' => [
+                'id'          => (int) $user['id'],
+                'servidor_id' => $user['servidor_id'] ? (int) $user['servidor_id'] : null,
+                'nome'        => $user['nome'],
+                'cargo_label' => $this->getCargoLabel($user['cargo'] ?? ''),
+                'avatar'      => $user['foto_url'] ?? null,
+                'cor'         => $this->getCorUnidade($unidadeId),
+            ],
+            'gestor' => $gestor ? [
+                'id'           => (int) $gestor['id'],
+                'servidor_id'  => $gestor['servidor_id'] ? (int) $gestor['servidor_id'] : null,
+                'nome'         => $gestor['nome'],
+                'cargo_label'  => 'Gestor',
+                'unidade_nome' => $gestor['unidade_nome'] ?? null,
+                'avatar'       => $gestor['foto_url'] ?? null,
+                'cor'          => $this->getCorUnidade($unidadeId),
+            ] : null,
+            'admin' => $admin ? [
+                'id'          => (int) $admin['id'],
+                'servidor_id' => $admin['servidor_id'] ? (int) $admin['servidor_id'] : null,
+                'nome'        => $admin['nome'],
+                'cargo_label' => 'Administrador',
+                'avatar'      => $admin['foto_url'] ?? null,
+                'cor'         => '#1E3A8A',
+            ] : null,
+        ];
+    }
 }

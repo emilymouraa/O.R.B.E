@@ -57,6 +57,11 @@ $router->add('POST', '/logout', function () {
 
 $router->add('GET', '/dashboard', function () {
     \App\Middleware\AuthMiddleware::handle();
+    $role = $_SESSION['user']['role'] ?? 'user';
+    if ($role === 'user') {
+        header('Location: /perfil');
+        exit;
+    }
     require __DIR__ . '/../Views/dashboard/home.php';
 });
 
@@ -96,17 +101,55 @@ $router->add('PUT',  '/api/perfil',      function () use ($conn) {
 });
 
 $rotasProtegidas = [
-    '/usuarios'       => ['view' => 'dashboard/home.php',          'toast' => null],
-    '/perfil'         => ['view' => 'dashboard/perfil.php',        'toast' => null],
-    '/organograma'    => ['view' => 'dashboard/organograma.php',   'toast' => ['type' => 'info',    'title' => 'Organograma',      'desc' => 'Exibindo a hierarquia atual.']],
-    '/competencias'   => ['view' => 'dashboard/competencias.php',  'toast' => ['type' => 'info',    'title' => 'Competências',     'desc' => 'Gerencie as competências cadastradas.']],
-    '/banco-talentos' => ['view' => 'dashboard/banco-talentos.php','toast' => ['type' => 'info',    'title' => 'Banco de Talentos','desc' => 'Visualize e filtre os servidores disponíveis.']],
-    '/painel'         => ['view' => 'dashboard/painel.php',        'toast' => ['type' => 'success', 'title' => 'Painel atualizado','desc' => 'Dados atualizados em ' . (new DateTime('now', new DateTimeZone('America/Sao_Paulo')))->format('H:i') . '.']],
+    '/usuarios'       => [
+        'view'  => 'dashboard/home.php',
+        'toast' => null,
+        'roles' => ['admin'],
+    ],
+    '/colaboradores'  => [
+        'view'  => 'dashboard/colaboradores.php',
+        'toast' => null,
+        'roles' => ['user', 'gestor'],
+    ],
+    '/perfil'         => [
+        'view'  => 'dashboard/perfil.php',
+        'toast' => null,
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
+    '/organograma'    => [
+        'view'  => 'dashboard/organograma.php',
+        'toast' => ['type' => 'info', 'title' => 'Organograma', 'desc' => 'Exibindo a hierarquia atual.'],
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
+    '/competencias'   => [
+        'view'  => 'dashboard/competencias.php',
+        'toast' => ['type' => 'info', 'title' => 'Competências', 'desc' => 'Gerencie as competências cadastradas.'],
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
+    '/banco-talentos' => [
+        'view'  => 'dashboard/banco-talentos.php',
+        'toast' => ['type' => 'info', 'title' => 'Banco de Talentos', 'desc' => 'Visualize e filtre os servidores disponíveis.'],
+        'roles' => ['admin', 'gestor'],
+    ],
+    '/painel'         => [
+        'view'  => 'dashboard/painel.php',
+        'toast' => ['type' => 'success', 'title' => 'Painel atualizado', 'desc' => 'Dados atualizados em ' . (new DateTime('now', new DateTimeZone('America/Sao_Paulo')))->format('H:i') . '.'],
+        'roles' => ['admin', 'gestor'],
+    ],
 ];
 
 foreach ($rotasProtegidas as $uri => $rota) {
     $router->add('GET', $uri, function () use ($rota) {
         \App\Middleware\AuthMiddleware::handle();
+
+        $role = $_SESSION['user']['role'] ?? 'user';
+
+        if (!in_array($role, $rota['roles'], true)) {
+            $destino = $role === 'user' ? '/perfil' : '/painel';
+            header("Location: {$destino}");
+            exit;
+        }
+
         if ($rota['toast'] && empty($_SESSION['toast'])) {
             \App\Helpers\Toast::set(
                 $rota['toast']['type'],
@@ -114,14 +157,8 @@ foreach ($rotasProtegidas as $uri => $rota) {
                 $rota['toast']['desc']
             );
         }
-        require __DIR__ . '/../Views/' . $rota['view'];
-    });
-}
 
-foreach ($rotasProtegidas as $uri => $view) {
-    $router->add('GET', $uri, function () use ($view) {
-        \App\Middleware\AuthMiddleware::handle();
-        require __DIR__ . '/../Views/' . $view;
+        require __DIR__ . '/../Views/' . $rota['view'];
     });
 }
 
@@ -153,10 +190,28 @@ $router->add('GET', '/api/perfil', function () use ($conn) {
     (new UserController($conn))->perfil();
 });
 
+$router->add('GET', '/api/colaboradores', function () use ($conn) {
+    (new UserController($conn))->colaboradores();
+});
+
+$router->add('GET', '/api/notificacoes', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->index();
+});
+
 $router->add('GET', '/api/competencias', function () use ($conn) {
     (new \App\Controllers\CompetenciaController($conn))->index();
+});
+$router->add('POST', '/api/competencias', function () use ($conn) {
+    (new \App\Controllers\CompetenciaController($conn))->store();
+});
+$router->add('POST', '/api/competencias/{id}/anexo', function () use ($conn) {
+    (new \App\Controllers\CompetenciaController($conn))->uploadAnexo((int) $_GET['id']);
 });
 
 $router->add('GET', '/api/servidores/{id}/perfil', function () use ($conn) {
     (new \App\Controllers\ServidorController($conn))->perfil((int) $_GET['id']);
+});
+
+$router->add('GET', '/api/organograma/hierarquia-usuario', function () use ($conn) {
+    (new OrganogramaController($conn))->hierarquiaUsuario();
 });

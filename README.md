@@ -5,7 +5,9 @@
     │   │   │   └── style.css
     │   │   ├── images/
     │   │   └── js/
-    │   │       └── app.js
+    │   │       ├── app.js
+    │   │       ├── organograma.js
+    │   │       └── organograma-user.js
     │   ├── .htaccess
     │   ├── favicon.ico
     │   └── index.php
@@ -15,6 +17,7 @@
     │   │   ├── AuthController.php
     │   │   ├── BancoTalentosController.php
     │   │   ├── CompetenciasController.php
+    │   │   ├── NotificacaoController.php    
     │   │   ├── OrganogramaController.php
     │   │   ├── PainelController.php
     │   │   ├── UnidadeController.php
@@ -39,6 +42,8 @@
     │   │   ├── LogModel.php
     │   │   ├── BancoTalentosModel.php
     │   │   ├── CompetenciaModel.php
+    │   │   ├── LogModel.php
+    │   │   ├── NotificacaoModel.php    
     │   │   ├── OrganogramaModel.php
     │   │   ├── ServidorModel.php
     │   │   ├── ServidorPerfilModel.php    
@@ -59,6 +64,7 @@
     │       │
     │       ├── dashboard/
     │       │   ├── banco-talentos.php
+    │       │   ├── colaboradores.php
     │       │   ├── competencias.php
     │       │   ├── home.php
     │       │   ├── organograma.php

@@ -119,6 +119,7 @@ class AuthService {
             'nome'       => $user['nome'],
             'role'       => $user['role'],
             'servidor_id'=> $servidor['id'],
+            'unidade_id' => $servidor['unidade_id'],
         ];
 
         return ['success' => true];

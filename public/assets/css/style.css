@@ -2544,3 +2544,22 @@ input[type="password"] {
     color: var(--primary);
     text-decoration: underline;
 }
+
+.user-name-cell {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.avatar-initials {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--primary, #3b82f6);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}

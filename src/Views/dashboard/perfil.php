@@ -12,13 +12,48 @@ require __DIR__ . '/../layout/sidebar.php';
 ?>
 <div class="main-content">
     <header class="header-section">
+        <style>
+            .notif-dropdown{display:none;position:absolute;top:2.2rem;right:0;width:320px;background:var(--card);border:1px solid var(--border);border-radius:.75rem;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:200}
+            .notif-dropdown.open{display:block}
+            .notif-header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:600;font-size:.85rem;color:var(--text)}
+            .notif-mark-all{background:none;border:none;color:var(--primary);cursor:pointer;font-size:.78rem}
+            .notif-list{list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto}
+            .notif-item{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.82rem;display:flex;gap:.6rem;align-items:flex-start}
+            .notif-item.unread{background:var(--surface)}
+            .notif-item-icon{font-size:1rem;margin-top:.1rem;flex-shrink:0}
+            .notif-item-icon.warn{color:#f59e0b}
+            .notif-item-icon.danger{color:#ef4444}
+            .notif-item-icon.info{color:var(--primary)}
+            .notif-item-body{display:flex;flex-direction:column;gap:.2rem}
+            .notif-item-title{font-weight:600;color:var(--text)}
+            .notif-item-desc{color:var(--muted)}
+            .notif-empty{padding:1.5rem 1rem;text-align:center;color:var(--muted);font-size:.85rem}
+        </style>
         <div class="title-group">
             <h1>Meu Perfil</h1>
             <p>Consulte suas informações cadastrais e de acesso</p>
         </div>
-        <button class="btn-new" id="btnEditarPerfil" style="display:none">
-            <i class="fas fa-pencil-alt"></i> Editar Perfil
-        </button>
+        <div style="display:flex;align-items:center;gap:.75rem">
+            <button class="btn-new" id="btnEditarPerfil" style="display:none">
+                <i class="fas fa-pencil-alt"></i> Editar Perfil
+            </button>
+            <div style="position:relative" id="notifWrapper">
+                <button id="notifBtn" title="Notificações" aria-label="Abrir notificações"
+                    style="background:none;border:none;cursor:pointer;font-size:1.25rem;color:var(--muted);padding:.25rem;display:flex;align-items:center">
+                    <i class="fas fa-bell"></i>
+                    <span id="notifBadge" style="display:none;position:absolute;top:-.2rem;right:-.2rem;background:#ef4444;color:#fff;border-radius:50%;font-size:.6rem;font-weight:700;min-width:1rem;height:1rem;align-items:center;justify-content:center;padding:0 .15rem"></span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+                    <div class="notif-header">
+                        <span>Notificações</span>
+                        <button class="notif-mark-all" id="notifMarkAll">Marcar todas como lidas</button>
+                    </div>
+                    <ul class="notif-list" id="notifList">
+                        <li class="notif-empty">Carregando...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </header>
 
     <div class="perfil-loading" id="perfilLoading">

@@ -9,13 +9,51 @@
 
 $currentPath = strtok($_SERVER['REQUEST_URI'], '?');
  
+$role     = $_SESSION['user']['role'] ?? 'user';
+
 $navItems = [
-    ['href' => '/painel',       'icon' => 'fa-chart-line',  'label' => 'Painel'],
-    ['href' => '/usuarios',        'icon' => 'fa-users',       'label' => 'Usuários'],
-    ['href' => '/organograma',     'icon' => 'fa-sitemap',     'label' => 'Organograma'],
-    ['href' => '/competencias',    'icon' => 'fa-star',        'label' => 'Competências'],
-    ['href' => '/banco-talentos',  'icon' => 'fa-briefcase',   'label' => 'Banco de Talentos'],
-    ['href' => '/perfil',          'icon' => 'fa-user-circle', 'label' => 'Meu Perfil'],
+    [
+        'href'  => '/painel',
+        'icon'  => 'fa-chart-line',
+        'label' => 'Painel',
+        'roles' => ['admin', 'gestor'],
+    ],
+    [
+        'href'  => '/usuarios',
+        'icon'  => 'fa-users',
+        'label' => 'Usuários',
+        'roles' => ['admin'],
+    ],
+    [
+        'href'  => '/colaboradores',
+        'icon'  => 'fa-users',
+        'label' => 'Colaboradores',
+        'roles' => ['user', 'gestor'],
+    ],
+    [
+        'href'  => '/organograma',
+        'icon'  => 'fa-sitemap',
+        'label' => 'Organograma',
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
+    [
+        'href'  => '/competencias',
+        'icon'  => 'fa-star',
+        'label' => 'Competências',
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
+    [
+        'href'  => '/banco-talentos',
+        'icon'  => 'fa-briefcase',
+        'label' => 'Banco de Talentos',
+        'roles' => ['admin', 'gestor'],
+    ],
+    [
+        'href'  => '/perfil',
+        'icon'  => 'fa-user-circle',
+        'label' => 'Meu Perfil',
+        'roles' => ['admin', 'gestor', 'user'],
+    ],
 ];
 ?>
  
@@ -38,6 +76,7 @@ $navItems = [
     <!-- ── Itens de navegação ── -->
     <nav class="sidebar-nav">
         <?php foreach ($navItems as $item):
+            if (!in_array($role, $item['roles'])) continue;
             $active = ($currentPath === $item['href']) ? 'active' : '';
         ?>
         <a href="<?= $item['href'] ?>" class="sidebar-link <?= $active ?>" title="<?= htmlspecialchars($item['label']) ?>">

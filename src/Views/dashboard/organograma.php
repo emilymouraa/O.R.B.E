@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Organograma';
+$pageTitle = 'Organograma · ORBE';
 $bodyClass = 'dashboard-page';
 
 require __DIR__ . '/../layout/header.php';
@@ -33,6 +33,12 @@ require __DIR__ . '/../layout/sidebar.php';
 
 </div>
 
-<script src="/assets/js/organograma.js"></script>
+<?php
+$role = $_SESSION['user']['role'] ?? 'user';
+if ($role === 'user'): ?>
+    <script src="/assets/js/organograma-user.js"></script>
+<?php else: ?>
+    <script src="/assets/js/organograma.js"></script>
+<?php endif; ?>
 <?php require __DIR__ . '/../layout/partials/modal-perfil-servidor.php'; ?>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

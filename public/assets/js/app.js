@@ -11,7 +11,7 @@
 
 // ── Base URL dinâmica ─────────────────────────────────────────────
 const BASE_URL = window.location.pathname
-    .replace(/\/(login|register|dashboard|usuarios|perfil|organograma|competencias|banco-talentos|painel|api).*$/, '')
+    .replace(/\/(login|register|dashboard|usuarios|perfil|colaboradores|organograma|competencias|banco-talentos|painel|api).*$/, '')
     .replace(/\/$/, '');
 
 // ── Tema ─────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ function irParaPagina(page) {
 
 // ── Filtros com debounce no search ────────────────────────────────
 let debounceTimer;
-if (inputSearch) {
+if (inputSearch && document.getElementById('filtro-role')) {
     inputSearch.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
@@ -583,7 +583,7 @@ if (formEdicao) {
 
 // ── Init ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    if (tbody) {
+    if (tbody && document.getElementById('filtro-role')) {
         carregarUnidades();
         carregarUsuarios();
     }
