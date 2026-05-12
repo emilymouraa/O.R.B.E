@@ -377,7 +377,6 @@ class UserController extends Controller
 
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        // Campos permitidos para auto-edição (sem role, cargo, unidade, situacao)
         $allowed = ['nome', 'email', 'data_nascimento'];
         $payload = array_intersect_key($data, array_flip($allowed));
 
@@ -393,7 +392,6 @@ class UserController extends Controller
             return;
         }
 
-        // Garante que o e-mail não pertence a outro usuário
         $existing = $this->model->findByEmail($payload['email']);
         if ($existing && (int) $existing['id'] !== $userId) {
             http_response_code(409);
@@ -410,7 +408,6 @@ class UserController extends Controller
 
         $this->model->updatePerfil($userId, $payload);
 
-        // Atualiza data_nascimento no servidor vinculado
         if ($user['servidor_id'] && !empty($payload['data_nascimento'])) {
             $this->servidorModel->updateDataNascimento(
                 (int) $user['servidor_id'],
@@ -418,9 +415,43 @@ class UserController extends Controller
             );
         }
 
-        // Mantém sessão sincronizada
         $_SESSION['user']['nome'] = $payload['nome'];
 
         $this->jsonResponse(['success' => true, 'mensagem' => 'Perfil atualizado com sucesso.']);
+    }
+
+    public function colaboradores(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['user']);
+
+        $unidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        if (!$unidadeId) {
+            http_response_code(422);
+            $this->jsonResponse(['error' => 'Unidade não identificada na sessão.']);
+            return;
+        }
+
+        $search = trim($_GET['search'] ?? '');
+        $data   = $this->model->listColaboradoresDaUnidade($unidadeId, $search);
+        $total  = $this->model->countColaboradoresDaUnidade($unidadeId, $search);
+
+        $formatted = array_map(function (array $row): array {
+            return [
+                'nome'          => $row['nome'],
+                'email'         => $row['email'],
+                'cargo'         => $this->formatCargo($row['cargo']),
+                'unidade'       => $row['unidade'],
+                'unidade_sigla' => $row['unidade_sigla'],
+                'situacao'      => $this->formatSituacao($row['situacao']),
+            ];
+        }, $data);
+
+        $this->jsonResponse([
+            'data'     => $formatted,
+            'total'    => $total,
+            'mensagem' => "Total de {$total} colaboradores na sua unidade",
+        ]);
     }
 }

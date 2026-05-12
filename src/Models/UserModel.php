@@ -263,4 +263,58 @@ class UserModel extends Model
             'id'    => $userId,
         ]);
     }
+
+    public function listColaboradoresDaUnidade(int $unidadeId, string $search = ''): array
+    {
+        $params = ['unidade_id' => $unidadeId];
+        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL";
+
+        if (!empty($search)) {
+            $where .= " AND u.nome ILIKE :search";
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $sql = "
+            SELECT
+                u.id,
+                u.nome,
+                u.email,
+                s.cargo,
+                s.situacao,
+                un.nome  AS unidade,
+                un.sigla AS unidade_sigla
+            FROM users u
+            INNER JOIN servidores s  ON s.id  = u.servidor_id
+            INNER JOIN unidades   un ON un.id = s.unidade_id
+            WHERE {$where}
+            ORDER BY u.nome ASC
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function countColaboradoresDaUnidade(int $unidadeId, string $search = ''): int
+    {
+        $params = ['unidade_id' => $unidadeId];
+        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL";
+
+        if (!empty($search)) {
+            $where .= " AND u.nome ILIKE :search";
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $sql = "
+            SELECT COUNT(*)
+            FROM users u
+            INNER JOIN servidores s  ON s.id  = u.servidor_id
+            INNER JOIN unidades   un ON un.id = s.unidade_id
+            WHERE {$where}
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
 }

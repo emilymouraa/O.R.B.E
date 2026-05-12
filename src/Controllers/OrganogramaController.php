@@ -71,4 +71,19 @@ class OrganogramaController extends Controller
             'data' => $resultado
         ]);
     }
+
+     public function hierarquiaUsuario(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['user']);
+        $userId = $_SESSION['user']['id'] ?? null;
+        if (!$userId) {
+            $this->jsonResponse(['success' => false, 'message' => 'Sessão inválida.'], 401);
+        }
+        $dados = $this->model->getHierarquiaDoUsuario((int) $userId);
+        if ($dados === null) {
+            $this->jsonResponse(['success' => false, 'message' => 'Dados não encontrados.'], 404);
+        }
+        $this->jsonResponse(['success' => true, 'data' => $dados]);
+    }
 }
