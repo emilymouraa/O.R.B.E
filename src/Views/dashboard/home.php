@@ -4,7 +4,7 @@
  * Dashboard de gestão de usuários.
  * Todo o CSS vem de /assets/css/style.css via header.php.
  */
-$pageTitle = 'Gestão de Usuários';
+$pageTitle = 'Gestão de Usuários · ORBE';
 $bodyClass = 'dashboard-page';
 require __DIR__ . '/../layout/header.php';
 require __DIR__ . '/../layout/sidebar.php'; 

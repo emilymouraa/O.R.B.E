@@ -7,7 +7,7 @@
  *   GET /api/banco-talentos/ranking
  *   GET /api/banco-talentos/busca?q=termo
  */
-$pageTitle = 'Banco de Talentos';
+$pageTitle = 'Banco de Talentos · ORBE';
 $bodyClass = 'dashboard-page';
 require __DIR__ . '/../layout/header.php';
 require __DIR__ . '/../layout/sidebar.php';

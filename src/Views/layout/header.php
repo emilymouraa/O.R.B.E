@@ -23,6 +23,7 @@ if (!empty($_SESSION['toast'])) {
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="icon" href="/favicon.ico">
 </head>
+</head>
 <body class="<?= htmlspecialchars($bodyClass) ?>">
 
 <?php if ($_phpToast): ?>
