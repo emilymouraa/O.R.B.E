@@ -24,69 +24,66 @@ class ServidorController extends Controller
 
     public function perfil(int $servidorId): void
     {
-        // Apenas usuários autenticados com perfil admin ou gestor
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['admin', 'gestor']);
+
+        $userSession  = $_SESSION['user'];
+        $role         = $userSession['role'] ?? '';
+        $meuServidorId = (int) ($userSession['servidor_id'] ?? 0);
+
+        // user só pode ver o próprio perfil
+        if ($role === 'user' && $servidorId !== $meuServidorId) {
+            $this->jsonResponse(['error' => 'Acesso negado.'], 403);
+            return;
+        }
+
+        // admin e gestor bloqueados normalmente
+        if (!in_array($role, ['admin', 'gestor', 'user'], true)) {
+            $this->jsonResponse(['error' => 'Acesso negado.'], 403);
+            return;
+        }
 
         if ($servidorId <= 0) {
-            http_response_code(400);
-            $this->jsonResponse(['error' => 'ID de servidor inválido.']);
+            $this->jsonResponse(['error' => 'ID de servidor inválido.'], 400);
             return;
         }
 
-        // Dados principais
         $perfil = $this->model->findPerfilById($servidorId);
-
         if (!$perfil) {
-            http_response_code(404);
-            $this->jsonResponse(['error' => 'Servidor não encontrado.']);
+            $this->jsonResponse(['error' => 'Servidor não encontrado.'], 404);
             return;
         }
 
-        // Dados relacionados (queries separadas para clareza e manutenção)
-        $beneficios        = $this->model->getBeneficios($servidorId);
-        $movimentacoes     = $this->model->getMovimentacoes($servidorId);
-        $avaliacoes        = $this->model->getAvaliacoes($servidorId);
-        $competencias      = $this->model->getCompetencias($servidorId);
+        $beneficios         = $this->model->getBeneficios($servidorId);
+        $movimentacoes      = $this->model->getMovimentacoes($servidorId);
+        $avaliacoes         = $this->model->getAvaliacoes($servidorId);
+        $competencias       = $this->model->getCompetencias($servidorId);
         $feriasAfastamentos = $this->model->getFeriasAfastamentos($servidorId);
-        $pdis              = $this->model->getPdis($servidorId);
+        $pdis               = $this->model->getPdis($servidorId);
 
-        // Monta o payload com exatamente as chaves esperadas pelo app.js
         $this->jsonResponse([
             'data' => [
-                // ── Cabeçalho ──────────────────────────────────────
-                'ra'                    => $perfil['ra'],
-                'nome'                  => $perfil['nome'],
-                'cargo'                 => $perfil['cargo'],
-                'patente'               => $perfil['patente'],
-                'situacao'              => $perfil['situacao'],
-                'foto_url'              => $perfil['foto_url'],
-
-                // ── Aba Funcional — Dados do Cargo ──────────────────
-                'data_ingresso'         => $perfil['data_ingresso'],
-                'previsao_aposentadoria'=> $perfil['previsao_aposentadoria'],
-
-                // ── Aba Funcional — Lotação ─────────────────────────
-                'unidade'               => $perfil['unidade'],
-                'unidade_sigla'         => $perfil['unidade_sigla'],
-                'estado'                => $perfil['estado'],
-                'unidade_tipo'          => $perfil['unidade_tipo'],
-                'email'                 => $perfil['email'],
-
-                // ── Aba Funcional — Remuneração ─────────────────────
-                'salario_base'          => $perfil['salario_base'],
-                'salario_desde'         => $perfil['salario_desde'],
-                'salario_motivo'        => $perfil['salario_motivo'],
-
-                // ── Aba Funcional — Benefícios ──────────────────────
-                'beneficios'            => $beneficios,
-
-                // ── Aba Trajetória ──────────────────────────────────
-                'movimentacoes'         => $movimentacoes,
-                'avaliacoes'            => $avaliacoes,
-                'competencias'          => $competencias,
-                'ferias_afastamentos'   => $feriasAfastamentos,
-                'pdis'                  => $pdis,
+                'ra'                     => $perfil['ra'],
+                'nome'                   => $perfil['nome'],
+                'cargo'                  => $perfil['cargo'],
+                'patente'                => $perfil['patente'],
+                'situacao'               => $perfil['situacao'],
+                'foto_url'               => $perfil['foto_url'],
+                'data_ingresso'          => $perfil['data_ingresso'],
+                'previsao_aposentadoria' => $perfil['previsao_aposentadoria'],
+                'unidade'                => $perfil['unidade'],
+                'unidade_sigla'          => $perfil['unidade_sigla'],
+                'estado'                 => $perfil['estado'],
+                'unidade_tipo'           => $perfil['unidade_tipo'],
+                'email'                  => $perfil['email'],
+                'salario_base'           => $perfil['salario_base'],
+                'salario_desde'          => $perfil['salario_desde'],
+                'salario_motivo'         => $perfil['salario_motivo'],
+                'beneficios'             => $beneficios,
+                'movimentacoes'          => $movimentacoes,
+                'avaliacoes'             => $avaliacoes,
+                'competencias'           => $competencias,
+                'ferias_afastamentos'    => $feriasAfastamentos,
+                'pdis'                   => $pdis,
             ],
         ]);
     }
