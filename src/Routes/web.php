@@ -193,6 +193,9 @@ $router->add('GET', '/api/perfil', function () use ($conn) {
 $router->add('GET', '/api/colaboradores', function () use ($conn) {
     (new UserController($conn))->colaboradores();
 });
+$router->add('PUT', '/api/gestor/colaboradores/{id}', function () use ($conn) {
+    (new UserController($conn))->updateColaboradorGestor((int) $_GET['id']);
+});
 
 $router->add('GET', '/api/notificacoes', function () use ($conn) {
     (new \App\Controllers\NotificacaoController($conn))->index();

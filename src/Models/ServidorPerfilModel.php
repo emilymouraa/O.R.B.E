@@ -33,6 +33,7 @@ class ServidorPerfilModel extends Model
                 u.tipo   AS unidade_tipo,
 
                 usr.email,
+                usr.role,
 
                 r.salario_base,
                 TO_CHAR(r.data_vigencia, 'DD/MM/YYYY') AS salario_desde,

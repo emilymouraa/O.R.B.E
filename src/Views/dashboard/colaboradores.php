@@ -26,6 +26,26 @@ require __DIR__ . '/../layout/sidebar.php';
                 autocomplete="off"
             >
         </div>
+
+        <div class="filter-group">
+            <select id="filtro-status">
+                <option value="">Todos os status</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Afastado">Afastado</option>
+                <option value="Aposentado">Aposentado</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <select id="filtro-cargo">
+                <option value="">Todos os cargos</option>
+                <option value="1a_Classe">1ª Classe</option>
+                <option value="2a_Classe">2ª Classe</option>
+                <option value="3a_Classe">3ª Classe</option>
+                <option value="Classe_Especial">Classe Especial</option>
+                <option value="Chefe_Divisao">Chefe de Divisão</option>
+            </select>
+        </div>
     </section>
 
     <div class="table-wrapper">
@@ -37,6 +57,9 @@ require __DIR__ . '/../layout/sidebar.php';
                     <th>Cargo</th>
                     <th>Unidade</th>
                     <th>Status</th>
+                    <?php if (($_SESSION['user']['role'] ?? '') === 'gestor'): ?>
+                    <th>Ações</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody id="tabela-body">
@@ -59,6 +82,9 @@ require __DIR__ . '/../layout/sidebar.php';
     const tbody    = document.getElementById('tabela-body');
     const contador = document.getElementById('contador');
     const search   = document.getElementById('filtro-search');
+    const statusFilter = document.getElementById('filtro-status');
+    const cargoFilter  = document.getElementById('filtro-cargo');
+    const isGestor = '<?= $_SESSION['user']['role'] ?>' === 'gestor';
 
     const situacaoBadge = {
         'Ativo'     : 'badge-ativo',
@@ -102,8 +128,54 @@ require __DIR__ . '/../layout/sidebar.php';
                         ${escHtml(c.situacao)}
                     </span>
                 </td>
+                ${isGestor ? `
+                <td>
+                    <button class="btn-edit"
+                        onclick='editarColaborador(${JSON.stringify(c)})'>
+                        Editar
+                    </button>
+                </td>
+                ` : ''}
             </tr>
         `).join('');
+    }
+
+    window.editarColaborador = async function(colaborador) {
+
+        const nome = prompt('Nome:', colaborador.nome);
+        if (nome === null) return;
+
+        const email = prompt('E-mail:', colaborador.email);
+        if (email === null) return;
+
+        const cargo = prompt('Cargo:', colaborador.cargo);
+        if (cargo === null) return;
+
+        const situacao = prompt('Situação:', colaborador.situacao);
+        if (situacao === null) return;
+
+        const res = await fetch(`/api/gestor/colaboradores/${colaborador.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nome,
+                email,
+                cargo,
+                situacao
+            })
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+            alert(json.error || 'Erro ao atualizar');
+            return;
+        }
+
+        alert('Atualizado com sucesso!');
+        load(search.value.trim());
     }
 
     async function load(searchVal = '') {
@@ -116,7 +188,18 @@ require __DIR__ . '/../layout/sidebar.php';
 
         try {
             const params = new URLSearchParams();
-            if (searchVal) params.set('search', searchVal);
+
+            if (searchVal) {
+                params.set('search', searchVal);
+            }
+
+            if (statusFilter.value) {
+                params.set('situacao', statusFilter.value);
+            }
+
+            if (cargoFilter.value) {
+                params.set('cargo', cargoFilter.value);
+            }
 
             const res  = await fetch(`/api/colaboradores?${params}`);
 
@@ -147,6 +230,14 @@ require __DIR__ . '/../layout/sidebar.php';
     search.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => load(search.value.trim()), 350);
+    });
+
+    statusFilter?.addEventListener('change', () => {
+        load(search.value.trim());
+    });
+
+    cargoFilter?.addEventListener('change', () => {
+        load(search.value.trim());
     });
 
     function initialsOf(nome) {
