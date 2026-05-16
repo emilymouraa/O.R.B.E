@@ -53,7 +53,9 @@ class CompetenciaModel extends Model
             FROM servidor_competencias sc
             INNER JOIN competencias c ON c.id = sc.competencia_id
             INNER JOIN servidores s   ON s.id = sc.servidor_id
+            INNER JOIN users u        ON u.servidor_id = s.id
             WHERE s.unidade_id = :unidade_id
+            AND u.role != 'admin'
             ORDER BY s.nome ASC, sc.data_conclusao DESC NULLS LAST
         ");
         $stmt->execute(['unidade_id' => $unidadeId]);
@@ -80,6 +82,8 @@ class CompetenciaModel extends Model
             FROM servidor_competencias sc
             INNER JOIN competencias c ON c.id = sc.competencia_id
             INNER JOIN servidores s   ON s.id = sc.servidor_id
+            INNER JOIN users u        ON u.servidor_id = s.id
+            WHERE u.role != 'admin'
             ORDER BY s.nome ASC, sc.data_conclusao DESC NULLS LAST
         ");
         $stmt->execute();
