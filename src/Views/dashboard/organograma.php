@@ -37,6 +37,8 @@ require __DIR__ . '/../layout/sidebar.php';
 $role = $_SESSION['user']['role'] ?? 'user';
 if ($role === 'user'): ?>
     <script src="/assets/js/organograma-user.js"></script>
+    <?php elseif ($role === 'gestor'): ?>
+    <script src="/assets/js/organograma-gestor.js"></script>
 <?php else: ?>
     <script src="/assets/js/organograma.js"></script>
 <?php endif; ?>

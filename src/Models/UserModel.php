@@ -264,14 +264,24 @@ class UserModel extends Model
         ]);
     }
 
-    public function listColaboradoresDaUnidade(int $unidadeId, string $search = ''): array
+    public function listColaboradoresDaUnidade(int $unidadeId, string $search = '', string $situacao = '', string $cargo = ''): array
     {
         $params = ['unidade_id' => $unidadeId];
-        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL";
+        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL AND u.role != 'admin'";
 
         if (!empty($search)) {
             $where .= " AND u.nome ILIKE :search";
             $params['search'] = '%' . $search . '%';
+        }
+
+        if (!empty($situacao)) {
+            $where .= " AND s.situacao = :situacao";
+            $params['situacao'] = strtolower($situacao);
+        }
+
+        if (!empty($cargo)) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = '%' . $cargo . '%';
         }
 
         $sql = "
@@ -295,14 +305,24 @@ class UserModel extends Model
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public function countColaboradoresDaUnidade(int $unidadeId, string $search = ''): int
+    public function countColaboradoresDaUnidade(int $unidadeId, string $search = '', string $situacao = '', string $cargo = ''): int
     {
         $params = ['unidade_id' => $unidadeId];
-        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL";
+        $where  = "s.unidade_id = :unidade_id AND u.servidor_id IS NOT NULL AND u.role != 'admin'";
 
         if (!empty($search)) {
             $where .= " AND u.nome ILIKE :search";
             $params['search'] = '%' . $search . '%';
+        }
+
+        if (!empty($situacao)) {
+            $where .= " AND s.situacao = :situacao";
+            $params['situacao'] = strtolower($situacao);
+        }
+
+        if (!empty($cargo)) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = '%' . $cargo . '%';
         }
 
         $sql = "
@@ -316,5 +336,34 @@ class UserModel extends Model
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
+    }
+
+    public function findColaboradorByIdAndUnidade(int $userId, int $unidadeId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                u.id,
+                u.nome,
+                u.email,
+                u.role,
+                u.servidor_id,
+                s.unidade_id,
+                s.cargo,
+                s.situacao
+            FROM users u
+            INNER JOIN servidores s ON s.id = u.servidor_id
+            WHERE u.id = :user_id
+            AND s.unidade_id = :unidade_id
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            'user_id' => $userId,
+            'unidade_id' => $unidadeId
+        ]);
+
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $user ?: null;
     }
 }

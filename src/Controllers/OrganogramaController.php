@@ -75,7 +75,7 @@ class OrganogramaController extends Controller
      public function hierarquiaUsuario(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['user']);
+        RoleMiddleware::handle(['user', 'gestor']);
         $userId = $_SESSION['user']['id'] ?? null;
         if (!$userId) {
             $this->jsonResponse(['success' => false, 'message' => 'Sessão inválida.'], 401);

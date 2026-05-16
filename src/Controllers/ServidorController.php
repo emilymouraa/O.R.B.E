@@ -53,6 +53,14 @@ class ServidorController extends Controller
             return;
         }
 
+        if (
+            $role === 'gestor'
+            && ($perfil['role'] ?? '') === 'admin'
+        ) {
+            $this->jsonResponse(['error' => 'Acesso negado.'], 403);
+            return;
+        }
+
         $beneficios         = $this->model->getBeneficios($servidorId);
         $movimentacoes      = $this->model->getMovimentacoes($servidorId);
         $avaliacoes         = $this->model->getAvaliacoes($servidorId);
