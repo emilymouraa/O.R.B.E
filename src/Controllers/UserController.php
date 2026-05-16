@@ -236,34 +236,80 @@ class UserController extends Controller
     public function show(int $id): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['admin']);
+
+        RoleMiddleware::handle(['admin', 'gestor']);
 
         $user = $this->model->findByIdWithUnidade($id);
+
         if (!$user) {
+
             http_response_code(404);
-            $this->jsonResponse(['error' => 'Usuário não encontrado.']);
+
+            $this->jsonResponse([
+                'error' => 'Usuário não encontrado.'
+            ]);
+
             return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | GESTOR só pode visualizar usuários da própria unidade
+        |--------------------------------------------------------------------------
+        */
+
+        $perfil = $_SESSION['user']['role'] ?? '';
+
+        if ($perfil === 'gestor') {
+
+            $gestorUnidade = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+            if ((int) $user['unidade_id'] !== $gestorUnidade) {
+
+                http_response_code(403);
+
+                $this->jsonResponse([
+                    'error' => 'Você não pode visualizar este usuário.'
+                ]);
+
+                return;
+            }
         }
 
         $this->jsonResponse([
             'data' => [
+
                 'id'                     => $user['id'],
                 'servidor_id'            => $user['servidor_id'],
+
                 'nome'                   => $user['nome'],
                 'email'                  => $user['email'],
+
                 'perfil_raw'             => $user['role'],
-                'cpf'                    => $user['cpf']              ?? null,
-                'cargo_raw'              => $user['cargo']            ?? null,
-                'ra'                     => $user['ra']               ?? null,
-                'patente'                => $user['patente']          ?? null,
-                'situacao'               => $user['situacao']         ?? 'ativo',
-                'unidade_id'             => $user['unidade_id']       ?? null,
-                'unidade'                => $user['unidade']          ?? null,
-                'data_nascimento'        => $user['data_nascimento']  ?? null,
-                'data_ingresso'          => $user['data_ingresso']    ?? null,
+
+                'cpf'                    => $user['cpf'] ?? null,
+
+                'cargo_raw'              => $user['cargo'] ?? null,
+
+                'ra'                     => $user['ra'] ?? null,
+
+                'patente'                => $user['patente'] ?? null,
+
+                'situacao'               => $user['situacao'] ?? 'ativo',
+
+                'unidade_id'             => $user['unidade_id'] ?? null,
+
+                'unidade'                => $user['unidade'] ?? null,
+
+                'data_nascimento'        => $user['data_nascimento'] ?? null,
+
+                'data_ingresso'          => $user['data_ingresso'] ?? null,
+
                 'previsao_aposentadoria' => $user['previsao_aposentadoria'] ?? null,
-                'foto_url'               => $user['foto_url']         ?? null,
-                'data_cadastro'          => $user['data_cadastro']    ?? null,
+
+                'foto_url'               => $user['foto_url'] ?? null,
+
+                'data_cadastro'          => $user['data_cadastro'] ?? null,
             ],
         ]);
     }
@@ -423,7 +469,7 @@ class UserController extends Controller
     public function colaboradores(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['user']);
+        RoleMiddleware::handle(['gestor', 'admin']);
 
         $unidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
 
@@ -433,18 +479,34 @@ class UserController extends Controller
             return;
         }
 
-        $search = trim($_GET['search'] ?? '');
-        $data   = $this->model->listColaboradoresDaUnidade($unidadeId, $search);
-        $total  = $this->model->countColaboradoresDaUnidade($unidadeId, $search);
+        $search   = trim($_GET['search'] ?? '');
+        $situacao = trim($_GET['situacao'] ?? '');
+        $cargo    = trim($_GET['cargo'] ?? '');
+        $data = $this->model->listColaboradoresDaUnidade(
+            $unidadeId,
+            $search,
+            $situacao,
+            $cargo
+        );
+
+        $total = $this->model->countColaboradoresDaUnidade(
+            $unidadeId,
+            $search,
+            $situacao,
+            $cargo
+        );
 
         $formatted = array_map(function (array $row): array {
             return [
-                'nome'          => $row['nome'],
-                'email'         => $row['email'],
-                'cargo'         => $this->formatCargo($row['cargo']),
-                'unidade'       => $row['unidade'],
-                'unidade_sigla' => $row['unidade_sigla'],
-                'situacao'      => $this->formatSituacao($row['situacao']),
+                'id'             => $row['id'],
+                'perfil_raw'     => $row['role'] ?? 'user',
+
+                'nome'           => $row['nome'],
+                'email'          => $row['email'],
+                'cargo'          => $this->formatCargo($row['cargo']),
+                'unidade'        => $row['unidade'],
+                'unidade_sigla'  => $row['unidade_sigla'],
+                'situacao'       => $this->formatSituacao($row['situacao']),
             ];
         }, $data);
 
@@ -452,6 +514,65 @@ class UserController extends Controller
             'data'     => $formatted,
             'total'    => $total,
             'mensagem' => "Total de {$total} colaboradores na sua unidade",
+        ]);
+    }
+
+    public function updateColaboradorGestor(int $id): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(['gestor']);
+
+        $gestorUnidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        if (!$gestorUnidadeId) {
+            http_response_code(403);
+            $this->jsonResponse([
+                'error' => 'Gestor sem unidade vinculada.'
+            ]);
+            return;
+        }
+
+        $colaborador = $this->model
+            ->findColaboradorByIdAndUnidade($id, $gestorUnidadeId);
+
+        if (!$colaborador) {
+            http_response_code(403);
+            $this->jsonResponse([
+                'error' => 'Você não pode editar este colaborador.'
+            ]);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $payloadUser = [
+            'nome' => $data['nome'],
+            'email' => $data['email'],
+            'role' => $colaborador['role'],
+            'situacao' => $data['situacao'],
+            'unidade_id' => $gestorUnidadeId,
+        ];
+
+        $payloadServidor = [
+            'nome' => $data['nome'],
+            'cpf' => $data['cpf'] ?? '',
+            'cargo' => $data['cargo'],
+            'situacao' => $data['situacao'],
+            'unidade_id' => $gestorUnidadeId,
+            'data_nascimento' => null,
+            'data_ingresso' => null,
+        ];
+
+        $this->model->update($id, $payloadUser);
+
+        $this->servidorModel->update(
+            (int) $colaborador['servidor_id'],
+            $payloadServidor
+        );
+
+        $this->jsonResponse([
+            'success' => true,
+            'mensagem' => 'Colaborador atualizado com sucesso.'
         ]);
     }
 }

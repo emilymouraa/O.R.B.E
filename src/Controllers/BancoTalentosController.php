@@ -20,7 +20,15 @@ class BancoTalentosController extends Controller
     public function __construct(PDO $conn)
     {
         AuthMiddleware::handle();
-        $this->model = new BancoTalentosModel($conn);
+        $role = $_SESSION['user']['role'] ?? null;
+
+        $unidadeId = null;
+
+        if ($role === 'gestor') {
+            $unidadeId = $_SESSION['user']['unidade_id'] ?? null;
+        }
+
+        $this->model = new BancoTalentosModel($conn, $unidadeId);
     }
 
     public function indicadores(): void

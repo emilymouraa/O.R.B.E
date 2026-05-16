@@ -2563,3 +2563,34 @@ input[type="password"] {
     justify-content: center;
     flex-shrink: 0;
 }
+
+.btn-edit {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+    
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.btn-edit:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-edit:active {
+    transform: scale(0.97);
+}
+
+.btn-edit:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 2px;
+}
