@@ -55,43 +55,13 @@ class PainelController extends Controller
 
         $total = $stmt->fetchColumn();
 
-        $sql = "
-            SELECT ROUND(
-                (
-                    COUNT(*) FILTER (
-                        WHERE DATE_TRUNC('month', data_ingresso) = DATE_TRUNC('month', CURRENT_DATE)
-                    )
-                    -
-                    COUNT(*) FILTER (
-                        WHERE DATE_TRUNC('month', data_ingresso) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                    )
-                )::NUMERIC
-                /
-                NULLIF(
-                    COUNT(*) FILTER (
-                        WHERE DATE_TRUNC('month', data_ingresso) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                    ),
-                    0
-                ) * 100
-            , 2)
+        $admissoesAno = $this->conn->query("
+            SELECT COUNT(*)
             FROM servidores
-            WHERE 1=1
-        ";
-
-        $params = [];
-
-        if ($role === 'gestor') {
-            $sql .= " AND unidade_id = :unidade_id";
-            $params['unidade_id'] = $unidadeId;
-        }
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-
-        $crescimento = $stmt->fetchColumn();
-
-        $unidadeId = $_SESSION['user']['unidade_id'];
-        $role      = $_SESSION['user']['role'];
+            WHERE situacao = 'ativo'
+            AND DATE_TRUNC('year', data_ingresso) =
+                DATE_TRUNC('year', CURRENT_DATE)
+        ")->fetchColumn();
 
         $sql = "
             SELECT COUNT(*)
@@ -113,38 +83,56 @@ class PainelController extends Controller
 
         $aposentadoria = $stmt->fetchColumn();
 
-        $capacitacoesAno = 0;
-        $crescimentoCap  = 0;
+        $capacitacoesAno = $this->conn->query("
+            SELECT COUNT(*)
+            FROM servidor_competencias
+            WHERE data_conclusao >= DATE_TRUNC('year', CURRENT_DATE)
+        ")->fetchColumn();
+        
+        $crescimentoCap = $this->conn->query("
+            WITH dados AS (
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE DATE_TRUNC('year', data_conclusao) =
+                            DATE_TRUNC('year', CURRENT_DATE)
+                    ) AS atual,
+
+                    COUNT(*) FILTER (
+                        WHERE DATE_TRUNC('year', data_conclusao) =
+                            DATE_TRUNC('year', CURRENT_DATE - INTERVAL '1 year')
+                    ) AS anterior
+                FROM servidor_competencias
+            )
+
+            SELECT
+                CASE
+                    WHEN anterior = 0 AND atual = 0 THEN 0
+                    WHEN anterior = 0 THEN 100
+                    ELSE ROUND(((atual - anterior)::numeric / anterior) * 100, 1)
+                END
+            FROM dados
+        ")->fetchColumn();
 
         
-        $sql = "
+        $tempoMedio = $this->conn->query("
             SELECT ROUND(
-                AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_ingresso)))
+                AVG(
+                    EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_ingresso))
+                )
             , 1)
             FROM servidores
             WHERE situacao = 'ativo'
-        ";
-
-        $params = [];
-
-        if ($role === 'gestor') {
-            $sql .= " AND unidade_id = :unidade_id";
-            $params['unidade_id'] = $unidadeId;
-        }
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-
-        $tempoMedio = $stmt->fetchColumn();
+            AND data_ingresso IS NOT NULL
+            AND data_ingresso <= CURRENT_DATE
+        ")->fetchColumn();
 
         $this->jsonResponse([
             'data' => [
-                'total_servidores'         => (int)   $total,
-                'crescimento_percentual'   => (float) ($crescimento ?? 0),
-                'proximos_aposentadoria'   => (int)   $aposentadoria,
-                'capacitacoes_ano'         => (int)   $capacitacoesAno,
-                'crescimento_capacitacoes' => (float) $crescimentoCap,
-                'tempo_medio_servico'      => (float) ($tempoMedio ?? 0),
+                'total_servidores'       => (int) $total,
+                'admissoes_ano'          => (int) $admissoesAno,
+                'proximos_aposentadoria' => (int) $aposentadoria,
+                'capacitacoes_ano'       => (int) $capacitacoesAno,
+                'tempo_medio_servico'    => (float) ($tempoMedio ?? 0),
             ]
         ]);
     }

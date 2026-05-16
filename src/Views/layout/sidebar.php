@@ -61,7 +61,7 @@ $navItems = [
  
     <!-- ── Logo sempre no topo, centralizada ── -->
     <div class="sidebar-logo-wrap">
-        <img src="/assets/images/orbe_logo.jpeg" alt="ORBE" class="sidebar-logo">
+        <img src="/assets/images/orbe_logo.png" alt="ORBE" class="sidebar-logo">
     </div>
  
     <!-- ── Hambúrguer sempre abaixo da logo ── -->

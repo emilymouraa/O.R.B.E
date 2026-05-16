@@ -33,9 +33,9 @@ require __DIR__ . '/../layout/sidebar.php';
         <div class="painel-card painel-card--crescimento">
             <div class="painel-card__icon"><i class="fas fa-arrow-trend-up"></i></div>
             <div class="painel-card__info">
-                <span class="painel-card__label">Crescimento</span>
-                <span class="painel-card__valor" id="ind-crescimento">—</span>
-                <span class="painel-card__sub">em relação ao período anterior</span>
+                <span class="painel-card__label">Admissões no Ano</span>
+                <span class="painel-card__valor" id="ind-admissoes">—</span>
+                <span class="painel-card__sub">ingressados em <?= date('Y') ?></span>
             </div>
         </div>
 
@@ -53,7 +53,7 @@ require __DIR__ . '/../layout/sidebar.php';
             <div class="painel-card__info">
                 <span class="painel-card__label">Capacitações no Ano</span>
                 <span class="painel-card__valor" id="ind-capacitacoes">—</span>
-                <span class="painel-card__sub" id="ind-crescimento-cap">—</span>
+                <span class="painel-card__sub">concluídas em <?= date('Y') ?>  </span>
             </div>
         </div>
 

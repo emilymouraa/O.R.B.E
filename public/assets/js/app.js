@@ -819,12 +819,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function preencheIndicadores(d) {
-        document.getElementById('ind-total').textContent          = fmtNum(d.total_servidores);
-        document.getElementById('ind-crescimento').textContent    = fmtPct(d.crescimento_percentual);
-        document.getElementById('ind-aposentadoria').textContent  = fmtNum(d.proximos_aposentadoria);
-        document.getElementById('ind-capacitacoes').textContent   = fmtNum(d.capacitacoes_ano);
-        document.getElementById('ind-crescimento-cap').textContent = 'crescimento: ' + fmtPct(d.crescimento_capacitacoes);
-        document.getElementById('ind-tempo-medio').textContent    = fmtAnos(d.tempo_medio_servico);
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        setText('ind-total', d.total_servidores);
+        setText('ind-admissoes', d.admissoes_ano ?? 0);
+        setText('ind-aposentadoria', d.proximos_aposentadoria);
+        setText('ind-capacitacoes', d.capacitacoes_ano);
+        setText(
+            'ind-tempo-medio',
+            `${Number(d.tempo_medio_servico).toFixed(1)} anos`
+        );
     }
 
     let chartBarras = null;
