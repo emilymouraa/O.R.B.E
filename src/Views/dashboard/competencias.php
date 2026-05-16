@@ -16,7 +16,7 @@ require __DIR__ . '/../layout/sidebar.php';
     <!-- ── Cabeçalho ── -->
     <header class="header-section">
         <div class="title-group">
-            <?php if ($roleAtual === 'user'): ?>
+            <?php if (in_array($roleAtual, ['user', 'gestor'])): ?>
                 <h1>Minhas Competências</h1>
                 <p>Seu portfólio profissional de cursos, certificações e especializações</p>
             <?php else: ?>
@@ -24,7 +24,7 @@ require __DIR__ . '/../layout/sidebar.php';
                 <p>Registro de cursos, certificações e especializações da equipe</p>
             <?php endif; ?>
         </div>
-        <?php if ($roleAtual === 'user'): ?>
+        <?php if (in_array($roleAtual, ['user', 'gestor'])): ?>
         <button class="btn-new" id="btnNovaCompetencia">
             <i class="fas fa-plus"></i> Nova Competência
         </button>
@@ -81,7 +81,7 @@ require __DIR__ . '/../layout/sidebar.php';
                 <option value="habilidade">Habilidade</option>
             </select>
         </div>
-        <?php if ($roleAtual === 'user'): ?>
+        <?php if (in_array($roleAtual, ['user', 'gestor'])): ?>
         <div class="filter-group">
             <select id="validade-filter">
                 <option value="">Todas as validades</option>
@@ -110,7 +110,7 @@ require __DIR__ . '/../layout/sidebar.php';
 <!-- ═══════════════════════════════════════════════════════════
      MODAL — Nova Competência (só para user)
 ═══════════════════════════════════════════════════════════ -->
-<?php if ($roleAtual === 'user'): ?>
+<?php if (in_array($roleAtual, ['user', 'gestor'])): ?>
 <div id="modalCompetencia" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalCompTitulo" style="display:none">
     <div class="modal-content modal-content--large">
 
@@ -563,19 +563,21 @@ function escHtml(str) {
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function toggleDesc(idx) {
+window.toggleDesc = function(idx) {
     document.getElementById('desc-' + idx)?.classList.toggle('aberta');
-}
+};
 
-function abrirAnexo(url) {
+window.abrirAnexo = function(url) {
     window.open(url, '_blank');
-}
+};
 
 // ════════════════════════════════════════════════════════════
 // MODAL — NOVA COMPETÊNCIA (só user)
 // ════════════════════════════════════════════════════════════
 carregar();
-if (ROLE !== 'user') { return; }
+if (!['user', 'gestor'].includes(ROLE)) { 
+    return; 
+}
 
 const modal       = document.getElementById('modalCompetencia');
 const form        = document.getElementById('formCompetencia');
