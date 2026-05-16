@@ -12,6 +12,23 @@ class BancoTalentosModel extends Model
 {
     protected string $table = 'servidores';
 
+    private ?int $unidadeId = null;
+
+    public function __construct(PDO $db, ?int $unidadeId = null)
+    {
+        parent::__construct($db);
+        $this->unidadeId = $unidadeId;
+    }
+
+    private function filtroUnidade(): string
+    {
+        if ($this->unidadeId) {
+            return " AND s.unidade_id = {$this->unidadeId} ";
+        }
+
+        return '';
+    }
+
     public function getIndicadores(): array
     {
         $stmt = $this->db->query("
@@ -29,6 +46,7 @@ class BancoTalentosModel extends Model
                     WHEN media_servidor.media < 40 THEN s.id
                 END)                                        AS baixo_potencial
             FROM servidores s
+            INNER JOIN users us ON us.servidor_id = s.id
             INNER JOIN (
                 SELECT servidor_id, ROUND(AVG(pontuacao), 1) AS media
                 FROM avaliacoes
@@ -36,6 +54,8 @@ class BancoTalentosModel extends Model
             ) AS media_servidor ON media_servidor.servidor_id = s.id
             INNER JOIN avaliacoes a ON a.servidor_id = s.id
             WHERE s.situacao = 'ativo'
+            AND us.role != 'admin'
+            {$this->filtroUnidade()}
         ");
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -86,12 +106,15 @@ class BancoTalentosModel extends Model
                     ELSE 'Baixo'
                 END             AS nivel_potencial
             FROM servidores s
+            INNER JOIN users us ON us.servidor_id = s.id
             INNER JOIN avaliacoes a       ON a.servidor_id   = s.id
             INNER JOIN unidades u         ON u.id            = s.unidade_id
             LEFT JOIN servidor_competencias sc
                 ON sc.servidor_id = s.id
                AND sc.visibilidade = 'publica'
             WHERE s.situacao = 'ativo'
+            AND us.role != 'admin'
+            {$this->filtroUnidade()}
             GROUP BY s.id, s.nome, s.cargo, s.data_ingresso,
                      u.nome, u.sigla
             ORDER BY pontuacao DESC
@@ -136,6 +159,7 @@ class BancoTalentosModel extends Model
                     ELSE 'Baixo'
                 END             AS nivel_potencial
             FROM servidores s
+            INNER JOIN users us ON us.servidor_id = s.id
             INNER JOIN avaliacoes a       ON a.servidor_id   = s.id
             INNER JOIN unidades u         ON u.id            = s.unidade_id
             LEFT JOIN servidor_competencias sc
@@ -143,6 +167,8 @@ class BancoTalentosModel extends Model
                AND sc.visibilidade = 'publica'
             LEFT JOIN competencias c      ON c.id = sc.competencia_id
             WHERE s.situacao = 'ativo'
+            AND us.role != 'admin'
+            {$this->filtroUnidade()}
               AND (
                   s.nome  ILIKE :termo
                OR s.cargo ILIKE :termo
