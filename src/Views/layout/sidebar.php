@@ -84,12 +84,12 @@ $navItems = [
             <span class="sidebar-label"><?= htmlspecialchars($item['label']) ?></span>
         </a>
         <?php endforeach; ?>
-    </nav>
+        </nav>
  
     <!-- ── Logout no rodapé ── -->
     <div class="sidebar-footer">
-        <form method="POST" action="/logout">
-            <button type="submit" class="sidebar-link sidebar-logout" title="Sair">
+        <form method="POST" action="/logout" id="formLogout">
+            <button type="submit" class="sidebar-link sidebar-logout" title="Sair" id="btnLogout">
                 <i class="fas fa-sign-out-alt sidebar-icon"></i>
                 <span class="sidebar-label">Sair</span>
             </button>
@@ -97,3 +97,14 @@ $navItems = [
     </div>
  
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const formLogout = document.getElementById('formLogout');
+    if (formLogout) {
+        formLogout.addEventListener('submit', () => {
+            StateManager.clearAll();
+        });
+    }
+});
+</script>

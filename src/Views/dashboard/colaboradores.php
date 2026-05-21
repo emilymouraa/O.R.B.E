@@ -77,6 +77,9 @@ require __DIR__ . '/../layout/sidebar.php';
 
 </div>
 
+<?php require __DIR__ . '/../layout/modal-edicao-colaborador.php'; ?>
+<?php require __DIR__ . '/../layout/partials/modal-perfil-servidor.php'; ?>
+<?php require __DIR__ . '/../layout/footer.php'; ?>
 <script>
 (function () {
     const tbody    = document.getElementById('tabela-body');
@@ -85,16 +88,31 @@ require __DIR__ . '/../layout/sidebar.php';
     const statusFilter = document.getElementById('filtro-status');
     const cargoFilter  = document.getElementById('filtro-cargo');
     const isGestor = '<?= $_SESSION['user']['role'] ?>' === 'gestor';
-
     const situacaoBadge = {
         'Ativo'     : 'badge-ativo',
         'Afastado'  : 'badge-afastado',
         'Aposentado': 'badge-aposentado',
     };
 
+    // ── StateManager — salva e restaura filtros ───────────────
+    function salvarEstado() {
+        StateManager.save('/colaboradores', {
+            search:  search.value.trim(),
+            status:  statusFilter.value,
+            cargo:   cargoFilter.value,
+        });
+    }
+
+    function restaurarEstado() {
+        const est = StateManager.load('/colaboradores');
+        if (!est) return;
+        if (est.search) search.value          = est.search;
+        if (est.status) statusFilter.value    = est.status;
+        if (est.cargo)  cargoFilter.value     = est.cargo;
+    }
+
     function render(data, total) {
         contador.textContent = `${total} colaborador${total !== 1 ? 'es' : ''} na sua unidade`;
-
         if (!data.length) {
             tbody.innerHTML = `
                 <tr>
@@ -105,7 +123,6 @@ require __DIR__ . '/../layout/sidebar.php';
                 </tr>`;
             return;
         }
-
         tbody.innerHTML = data.map(c => `
             <tr>
                 <td>
@@ -130,7 +147,7 @@ require __DIR__ . '/../layout/sidebar.php';
                 </td>
                 ${isGestor ? `
                 <td>
-                    <button class="btn-edit"
+                    <button class="btn-acao btn-acao--editar" title="Editar colaborador"
                         onclick='editarColaborador(${JSON.stringify(c)})'>
                         Editar
                     </button>
@@ -140,43 +157,13 @@ require __DIR__ . '/../layout/sidebar.php';
         `).join('');
     }
 
-    window.editarColaborador = async function(colaborador) {
+    window.editarColaborador = function(colaborador) {
+        editarUsuario(colaborador.id, true);
+    };
 
-        const nome = prompt('Nome:', colaborador.nome);
-        if (nome === null) return;
-
-        const email = prompt('E-mail:', colaborador.email);
-        if (email === null) return;
-
-        const cargo = prompt('Cargo:', colaborador.cargo);
-        if (cargo === null) return;
-
-        const situacao = prompt('Situação:', colaborador.situacao);
-        if (situacao === null) return;
-
-        const res = await fetch(`/api/gestor/colaboradores/${colaborador.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nome,
-                email,
-                cargo,
-                situacao
-            })
-        });
-
-        const json = await res.json();
-
-        if (!res.ok) {
-            alert(json.error || 'Erro ao atualizar');
-            return;
-        }
-
-        alert('Atualizado com sucesso!');
+    window.recarregarColaboradores = function() {
         load(search.value.trim());
-    }
+    };
 
     async function load(searchVal = '') {
         tbody.innerHTML = `
@@ -185,24 +172,13 @@ require __DIR__ . '/../layout/sidebar.php';
                     <i class="fas fa-spinner fa-spin"></i> Carregando...
                 </td>
             </tr>`;
-
         try {
             const params = new URLSearchParams();
+            if (searchVal)          params.set('search',   searchVal);
+            if (statusFilter.value) params.set('situacao', statusFilter.value);
+            if (cargoFilter.value)  params.set('cargo',    cargoFilter.value);
 
-            if (searchVal) {
-                params.set('search', searchVal);
-            }
-
-            if (statusFilter.value) {
-                params.set('situacao', statusFilter.value);
-            }
-
-            if (cargoFilter.value) {
-                params.set('cargo', cargoFilter.value);
-            }
-
-            const res  = await fetch(`/api/colaboradores?${params}`);
-
+            const res = await fetch(`/api/colaboradores?${params}`);
             if (res.status === 403) {
                 tbody.innerHTML = `
                     <tr>
@@ -212,10 +188,8 @@ require __DIR__ . '/../layout/sidebar.php';
                     </tr>`;
                 return;
             }
-
             const json = await res.json();
             render(json.data ?? [], json.total ?? 0);
-
         } catch {
             tbody.innerHTML = `
                 <tr>
@@ -226,17 +200,23 @@ require __DIR__ . '/../layout/sidebar.php';
         }
     }
 
+    // ── Listeners com save ────────────────────────────────────
     let debounceTimer;
     search.addEventListener('input', () => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => load(search.value.trim()), 350);
+        debounceTimer = setTimeout(() => {
+            salvarEstado();
+            load(search.value.trim());
+        }, 350);
     });
 
     statusFilter?.addEventListener('change', () => {
+        salvarEstado();
         load(search.value.trim());
     });
 
     cargoFilter?.addEventListener('change', () => {
+        salvarEstado();
         load(search.value.trim());
     });
 
@@ -254,9 +234,8 @@ require __DIR__ . '/../layout/sidebar.php';
             .replace(/"/g, '&quot;');
     }
 
-    load();
-
+    // ── Init: restaura estado e carrega ───────────────────────
+    restaurarEstado();
+    load(search.value.trim());
 })();
 </script>
-
-<?php require __DIR__ . '/../layout/footer.php'; ?>

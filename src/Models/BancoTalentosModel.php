@@ -126,6 +126,7 @@ class BancoTalentosModel extends Model
         foreach ($rows as $posicao => $row) {
             $ranking[] = [
                 'posicao'            => $posicao + 1,
+                'id'                 => (int) $row['id'],
                 'nome'               => $row['nome'],
                 'cargo'              => $row['cargo'],
                 'unidade'            => $row['unidade_sigla'] . ' — ' . $row['unidade_nome'],

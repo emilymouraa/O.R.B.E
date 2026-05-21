@@ -34,9 +34,6 @@ require __DIR__ . '/../layout/sidebar.php';
             <p>Consulte suas informações cadastrais e de acesso</p>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
-            <button class="btn-new" id="btnEditarPerfil" style="display:none">
-                <i class="fas fa-pencil-alt"></i> Editar Perfil
-            </button>
             <div style="position:relative" id="notifWrapper">
                 <button id="notifBtn" title="Notificações" aria-label="Abrir notificações"
                     style="background:none;border:none;cursor:pointer;font-size:1.25rem;color:var(--muted);padding:.25rem;display:flex;align-items:center">
@@ -242,103 +239,7 @@ require __DIR__ . '/../layout/sidebar.php';
                 </div>
             </div>
         </div>
-    </div><!-- /perfilContent -->
-
-    <!-- ══════════════════════════════════════════════════
-         MODAL — Editar Perfil
-         Campos permitidos: nome, e-mail, data_nascimento
-         Campos bloqueados: RA, cargo, role, unidade, CPF
-    ══════════════════════════════════════════════════ -->
-    <div id="modalEditarPerfil" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditarPerfilTitulo">
-        <div class="modal-content modal-content--large">
-            <div class="modal-header">
-                <h2 id="modalEditarPerfilTitulo">Editar Perfil</h2>
-                <button type="button" class="close-btn" onclick="fecharModalEditarPerfil()" aria-label="Fechar">&times;</button>
-            </div>
-
-            <!-- Mini identity card (somente leitura) -->
-            <div class="perfil-identity-card" id="epIdentityCard">
-                <div class="perfil-avatar-wrap">
-                    <div class="perfil-avatar" id="epAvatar"></div>
-                </div>
-                <div class="perfil-identity-info">
-                    <p class="perfil-identity-ra"    id="epRA">—</p>
-                    <p class="perfil-identity-name"  id="epNome">—</p>
-                    <p class="perfil-identity-cargo" id="epCargo">—</p>
-                </div>
-            </div>
-
-            <form id="formEditarPerfil" novalidate>
-                <div class="perfil-info-grid">
-
-                    <!-- Card editável: Dados Pessoais -->
-                    <div class="perfil-info-card">
-                        <div class="perfil-info-card-header">
-                            <span class="perfil-info-icon perfil-info-icon--yellow">
-                                <i class="fas fa-user-pen"></i>
-                            </span>
-                            <h3>Dados para editar</h3>
-                        </div>
-                        <div class="perfil-fields">
-                            <div class="perfil-field">
-                                <label class="perfil-field-label" for="ep-nome">Nome Completo *</label>
-                                <input type="text" id="ep-nome" class="perfil-field-input" required
-                                       placeholder="Digite o nome completo">
-                            </div>
-                            <div class="perfil-field">
-                                <label class="perfil-field-label" for="ep-email">E-mail Institucional *</label>
-                                <input type="email" id="ep-email" class="perfil-field-input" required
-                                       placeholder="email@prf.gov.br">
-                            </div>
-                            <div class="perfil-field">
-                                <label class="perfil-field-label" for="ep-data-nascimento">Data de Nascimento</label>
-                                <input type="date" id="ep-data-nascimento" class="perfil-field-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card somente leitura: Dados Funcionais -->
-                    <div class="perfil-info-card">
-                        <div class="perfil-info-card-header">
-                            <span class="perfil-info-icon perfil-info-icon--blue">
-                                <i class="fas fa-id-badge"></i>
-                            </span>
-                            <h3>Dados <br><small style="font-weight:400;font-size:.75rem;opacity:.6">(somente leitura)</small></h3>
-                        </div>
-                        <div class="perfil-fields">
-                            <div class="perfil-field">
-                                <span class="perfil-field-label">Registro (RA)</span>
-                                <span class="perfil-field-value" id="ep-det-ra">—</span>
-                            </div>
-                            <div class="perfil-field">
-                                <span class="perfil-field-label">Cargo</span>
-                                <span class="perfil-field-value" id="ep-det-cargo">—</span>
-                            </div>
-                            <div class="perfil-field">
-                                <span class="perfil-field-label">Unidade</span>
-                                <span class="perfil-field-value" id="ep-det-unidade">—</span>
-                            </div>
-                            <div class="perfil-field">
-                                <span class="perfil-field-label">Perfil de Acesso</span>
-                                <span class="perfil-field-value" id="ep-det-perfil">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div><!-- /perfil-info-grid -->
-
-                <div id="feedbackEditarPerfil" class="feedback-msg" style="display:none"></div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" onclick="fecharModalEditarPerfil()">Cancelar</button>
-                    <button type="submit" class="btn-save" id="btnSalvarEditarPerfil">
-                        <i class="fas fa-save"></i> Salvar Alterações
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
-    <!-- /modalEditarPerfil -->
 
     <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 </div><!-- /main-content -->
@@ -417,7 +318,6 @@ async function carregarPerfil() {
     const loading = document.getElementById('perfilLoading');
     const content = document.getElementById('perfilContent');
     const error   = document.getElementById('perfilError');
-    const btnEdit = document.getElementById('btnEditarPerfil');
 
     loading.style.display = 'flex';
     content.style.display = 'none';
@@ -486,9 +386,6 @@ async function carregarPerfil() {
             document.getElementById('btnToggleCpf').style.display = 'inline-flex';
         }
 
-        /* Botão Editar Perfil — visível para todos os usuários autenticados */
-        btnEdit.style.display = 'flex';
-
         /* Upload de foto apenas para admin */
         if (u.perfil_raw === 'admin') {
             document.getElementById('avatarUploadLabel').style.display = 'flex';
@@ -543,90 +440,6 @@ function abrirModalEditarPerfil() {
 function fecharModalEditarPerfil() {
     document.getElementById('modalEditarPerfil').style.display = 'none';
 }
-
-// Fecha ao clicar no backdrop
-document.getElementById('modalEditarPerfil').addEventListener('click', function (e) {
-    if (e.target === this) fecharModalEditarPerfil();
-});
-
-// Fecha com Escape
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && document.getElementById('modalEditarPerfil').classList.contains('active')) {
-        fecharModalEditarPerfil();
-    }
-});
-
-/* ── Submit do formulário de edição ─────────────────────────── */
-document.getElementById('formEditarPerfil').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const btn = document.getElementById('btnSalvarEditarPerfil');
-    const fb  = document.getElementById('feedbackEditarPerfil');
-
-    const nome           = document.getElementById('ep-nome').value.trim();
-    const email          = document.getElementById('ep-email').value.trim();
-    const dataNascimento = document.getElementById('ep-data-nascimento').value;
-
-    // Validação mínima no cliente
-    if (!nome || !email) {
-        mostrarFeedback(fb, 'error', 'Nome e e-mail são obrigatórios.');
-        return;
-    }
-
-    btn.disabled    = true;
-    btn.innerHTML   = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
-    fb.style.display = 'none';
-
-    try {
-        const res = await fetch(`${BASE_URL}/api/perfil`, {
-            method:  'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ nome, email, data_nascimento: dataNascimento || null }),
-        });
-
-        const json = await res.json();
-
-        if (!res.ok) {
-            mostrarFeedback(fb, 'error', json.error ?? 'Erro ao salvar alterações.');
-            return;
-        }
-
-        mostrarFeedback(fb, 'success', json.mensagem ?? 'Perfil atualizado com sucesso!');
-
-        // Atualiza o cache e a tela sem precisar recarregar tudo
-        _perfilCache.nome           = nome;
-        _perfilCache.email          = email;
-        _perfilCache.data_nascimento = dataNascimento || null;
-
-        document.getElementById('perfilNome').textContent  = nome;
-        document.getElementById('detEmail').textContent    = email;
-        document.getElementById('detNascimento').textContent =
-            dataNascimento ? formatarDataBR(dataNascimento) : '—';
-        document.getElementById('epNome').textContent  = nome;
-
-        // Fecha o modal após breve delay para o usuário ver o sucesso
-        setTimeout(fecharModalEditarPerfil, 1400);
-
-    } catch (err) {
-        console.error(err);
-        mostrarFeedback(fb, 'error', 'Erro de conexão. Tente novamente.');
-    } finally {
-        btn.disabled  = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
-    }
-});
-
-/* ── Utilitário de feedback inline ──────────────────────────── */
-function mostrarFeedback(el, tipo, msg) {
-    el.textContent   = msg;
-    el.className     = `feedback-msg feedback-msg--${tipo}`;
-    el.style.display = 'block';
-}
-
-/* ── Botão Editar Perfil ─────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btnEditarPerfil').addEventListener('click', abrirModalEditarPerfil);
-});
 
 /* ── Toggle CPF ─────────────────────────────────────────────── */
 document.getElementById('btnToggleCpf').addEventListener('click', () => {

@@ -18,65 +18,52 @@
    1. VARIÁVEIS & TEMA
    ════════════════════════════════════════════════════════════════ */
 :root {
-    /* Paleta principal */
-    --primary:        #002d5e;
-    --primary-hover:  #00448f;
-    --primary-light:  #dbeafe;
+    --primary:        #F2B705;
+    --primary-hover:  #d69d00;
+    --primary-light:  #fff5cc;
 
-    /* Superfícies */
-    --bg:       #f0f2f5;
-    --white:    #ffffff;
-    --surface:  #e8edf3;
-    --card:     #ffffff;
+    --bg:             #DCE3E1;
+    --white:          #ffffff;
+    --surface:        #eef2f9;
+    --card:           #ffffff;
 
-    /* Texto */
-    --text:     #1e293b;
-    --muted:    #64748b;
+    --text:           #101740;
+    --muted:          #66709b;
+    --border:         #d8deef;
 
-    /* Bordas */
-    --border:   #d0d7e2;
+    --danger:         #e5484d;
+    --success:        #24A652;
+    --warning:        #F2E530;
 
-    /* Semânticas */
-    --danger:   #ef4444;
-    --success:  #22c55e;
-    --warning:  #f59e0b;
+    --input-bg:       #ffffff;
 
-    /* Inputs */
-    --input-bg: #ffffff;
-
-    --sidebar-width-open:    220px;
-    --sidebar-width-closed:   62px;
-    --sidebar-bg:            #ffffff;
-    --sidebar-border:        #d0d7e2;
-    --sidebar-active-bg:     #dbeafe;
-    --sidebar-active-text:   #002d5e;
-    --sidebar-hover-bg:      #f1f5f9;
+    --sidebar-bg:           #101740;
+    --sidebar-border:       #1e2a68;
+    --sidebar-active-bg:    #F2B705;
+    --sidebar-active-text:  #101740;
+    --sidebar-hover-bg:     #19245a;
 }
 
 [data-theme="dark"] {
-    --primary:        #3a7cff;
-    --primary-hover:  #5a95ff;
-    --primary-light:  #1e3a5f;
-
-    --bg:       #0f172a;
-    --white:    #1e293b;
-    --surface:  #162032;
-    --card:     #1e293b;
-
-    --text:     #e2e8f0;
-    --muted:    #94a3b8;
-
-    --border:   #334155;
-
-    --danger:   #f87171;
-
-    --input-bg: #253347;
-
-    --sidebar-bg:            #162032;
-    --sidebar-border:        #334155;
-    --sidebar-active-bg:     #1e3a5f;
-    --sidebar-active-text:   #3a7cff;
-    --sidebar-hover-bg:      #1e293b;
+  --primary:        #14B5D9;
+  --primary-hover:  #4dcce6;
+  --primary-light:  #083040;
+  --bg:             #06101e;
+  --white:          #0d1c2e;
+  --surface:        #091520;
+  --card:           #01122C;
+  --text:           #b8d8f0;   /* azul-névoa suave */
+  --muted:          #4d7a9a;   /* texto de apoio — azul médio */
+  --border:         #142538;
+  --danger:         #f87171;
+  --success:        #24A652;
+  --warning:        #F2B705;
+  --input-bg:       #0d1c2e;
+  --sidebar-bg:            #040c16;
+  --sidebar-border:        #142538;
+  --sidebar-active-bg:     #083040;
+  --sidebar-active-text:   #14B5D9;
+  --sidebar-hover-bg:      #0d1c2e;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -94,6 +81,48 @@ body {
     color: var(--text);
     transition: background 0.2s, color 0.2s;
     min-height: 100vh;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TELA DE LOGIN — fundo com imagem
+   ════════════════════════════════════════════════════════════════ */
+body.auth-page {
+    background-image: url('/assets/images/fundo_prf.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+body.auth-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-color: color-mix(in srgb, var(--muted) 80%, transparent);
+    z-index: 0;
+    pointer-events: none;
+}
+
+body.auth-page .login-container {
+    position: relative;
+    z-index: 1;
+}
+
+body.auth-page .theme-toggle {
+    position: fixed;
+    z-index: 1000;
+}
+
+[data-theme="dark"] body.auth-page {
+    background-image: url('/assets/images/fundo_prf2.png');
+    background-size: cover;
+    background-position: center 46%;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+[data-theme="dark"] body.auth-page::before {
+    background-color: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 
 a {
@@ -194,6 +223,27 @@ h2 { font-size: 1.25rem; color: var(--text); text-align: center; margin-bottom: 
 .btn-edit   { color: var(--primary); }
 .btn-delete { color: var(--danger); }
 .btn-icon:hover { transform: scale(1.15); }
+
+.btn-acao {
+    display: inline-block;
+    padding: 5px 14px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.05s;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.btn-acao--editar {
+    background: var(--primary);
+    color: #ffffff;
+}
+.btn-acao--editar:hover {
+    background: var(--primary-hover);
+}
+.btn-acao:active { transform: scale(0.97); }
 
 /* ── Mensagens de feedback ─────────────────────────────────────── */
 .error {
@@ -312,6 +362,16 @@ h2 { font-size: 1.25rem; color: var(--text); text-align: center; margin-bottom: 
     cursor: not-allowed;
     color: var(--muted);
 }
+.perfil-field-locked {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.875rem;
+    cursor: not-allowed;
+}
 
 /* Alias legado usado em login.php e register.php */
 .theme-toggle {
@@ -365,7 +425,11 @@ body.auth-page {
     text-align: center;
     margin-bottom: 25px;
 }
-.logo { width: 260px; }
+
+.logo { 
+    width: 200px;
+    transition: opacity 0.25s ease;
+}
 
 .register-link {
     text-align: center;
@@ -433,6 +497,40 @@ body.dashboard-page {
     box-shadow: none;
 }
 
+.login-bg-logo-wrap {
+    position: fixed;        /* ocupa a viewport toda, não o container */
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 0;             /* atrás de tudo */
+}
+
+.login-bg-logo {
+    width: min(600px, 75vw);
+    opacity: 0.10;
+    filter: grayscale(40%);
+    user-select: none;
+    animation: login-logo-breathe 8s ease-in-out infinite;
+}
+
+/* login-container e login-box precisam de z-index acima */
+.login-container {
+    position: relative;
+    z-index: 1;
+}
+
+.login-box {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes login-logo-breathe {
+    0%, 100% { opacity: 0.10; transform: scale(1);     }
+    50%       { opacity: 0.15; transform: scale(1.04); }
+}
+
 /* ── Tabela ────────────────────────────────────────────────────── */
 .table-wrapper {
     background: var(--white);
@@ -456,10 +554,20 @@ th {
     color: var(--muted);
 }
 td {
-    padding: 0.9rem 1rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border);
     font-size: 0.9rem;
     color: var(--text);
+    vertical-align: middle;
+    line-height: 1;
+}
+
+td .pill,
+td .badge,
+td .btn-acao {
+    vertical-align: middle;
+    position: relative;
+    top: 0;
 }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: var(--surface); }
@@ -478,8 +586,13 @@ tbody tr:hover { background: var(--surface); }
 }
 
 /* ── Ações da tabela ───────────────────────────────────────────── */
-.actions { display: flex; gap: 12px; }
-
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+}
 /* ── Paginação ─────────────────────────────────────────────────── */
 .pagination {
     display: flex;
@@ -571,8 +684,8 @@ tbody tr:hover { background: var(--surface); }
 }
  
 .sidebar.open .sidebar-logo {
-    width: 150px;
-    height: 150px;
+    width: 100px;
+    height: 100px;
 }
 
 .sidebar-toggle-wrap {
@@ -581,6 +694,37 @@ tbody tr:hover { background: var(--surface); }
     align-items: center;
     padding: 0 0.5rem 0.75rem;
     border-bottom: 1px solid var(--sidebar-border, var(--border));
+}
+
+/* ── Logo secundária (entre nav e footer) ── */
+.sidebar-logo-secondary-wrap {
+    flex: 1;               
+    padding: 1.5rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;        
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sidebar-logo-secondary {
+    width: 36px;
+    max-width: 80%;
+    opacity: 0.50;
+    filter: grayscale(50%);
+    transition: opacity 0.3s ease, width 0.3s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Sidebar aberta: logo um pouco maior */
+.sidebar.open .sidebar-logo-secondary {
+    width: 100px;
+}
+
+/* Hover suave */
+.sidebar:hover .sidebar-logo-secondary {
+    opacity: 0.8;
 }
  
 /* ── Botão hambúrguer ──────────────────────────────────────────── */

@@ -111,9 +111,9 @@ class UserModel extends Model
             $where .= " AND (u.nome ILIKE :search OR u.email ILIKE :search)";
             $params['search'] = '%' . $filters['search'] . '%';
         }
-        if (!empty($filters['role'])) {
-            $where .= " AND u.role = :role";
-            $params['role'] = $filters['role'];
+        if (!empty($filters['cargo'])) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = $filters['cargo'];
         }
         if (!empty($filters['situacao'])) {
             $where .= " AND s.situacao = :situacao";
@@ -131,7 +131,9 @@ class UserModel extends Model
                 u.email,
                 u.role,
                 u.ativo,
+                u.unidade_gestor_id AS unidade_id,
                 s.situacao,
+                s.cargo,
                 TO_CHAR(u.created_at, 'DD/MM/YYYY') AS data_cadastro,
                 un.nome AS unidade
             FROM users u
@@ -162,16 +164,16 @@ class UserModel extends Model
             $where .= " AND (u.nome ILIKE :search OR u.email ILIKE :search)";
             $params['search'] = '%' . $filters['search'] . '%';
         }
-        if (!empty($filters['role'])) {
-            $where .= " AND u.role = :role";
-            $params['role'] = $filters['role'];
+        if (!empty($filters['cargo'])) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = $filters['cargo'];
         }
         if (!empty($filters['situacao'])) {
             $where .= " AND s.situacao = :situacao";
             $params['situacao'] = $filters['situacao'];
         }
         if (!empty($filters['unidade_id'])) {
-            $where .= " AND s.unidade_id = :unidade_id";
+            $where .= " AND u.unidade_gestor_id = :unidade_id";
             $params['unidade_id'] = (int) $filters['unidade_id'];
         }
         $sql = "

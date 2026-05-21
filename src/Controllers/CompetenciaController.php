@@ -23,16 +23,19 @@ class CompetenciaController extends Controller
         $servidorId = (int) ($user['servidor_id'] ?? 0);
         $unidadeId  = (int) ($user['unidade_id']  ?? 0);
 
+        $filtroServidorId = isset($_GET['servidor_id']) ? (int) $_GET['servidor_id'] : null;
+
         if ($role === 'user') {
-            // Usuário comum: só vê as suas próprias
             if (!$servidorId) {
                 $this->jsonResponse(['error' => 'Servidor não vinculado.'], 400);
                 return;
             }
             $dados = $this->model->listarPorServidor($servidorId);
-
         } else {
-            if ($role === 'admin') {
+            if ($filtroServidorId) {
+                $isAdmin = $role === 'admin';
+                $dados = $this->model->listarPorServidorPublico($filtroServidorId, $isAdmin);
+            } elseif ($role === 'admin') {
                 $dados = $this->model->listarTodas();
             } else {
                 if (!$unidadeId) {

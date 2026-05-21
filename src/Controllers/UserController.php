@@ -25,36 +25,58 @@ class UserController extends Controller
 
     public function index(): void
     {
-        // Protege a rota: deve estar logado e ser admin
         AuthMiddleware::handle();
+
+        $role      = $_SESSION['user']['role']      ?? '';
+        $sessionId = (int) ($_SESSION['user']['id'] ?? 0);
 
         $page  = max(1, (int) ($_GET['page']  ?? 1));
         $limit = min(50, max(1, (int) ($_GET['limit'] ?? 10)));
 
         $filters = [
             'search'     => trim($_GET['search']      ?? ''),
-            'role'       => trim($_GET['role']         ?? ''),
+            'cargo'      => trim($_GET['cargo']        ?? ''),
             'situacao'   => trim($_GET['situacao']     ?? ''),
             'unidade_id' => (int) ($_GET['unidade_id'] ?? 0) ?: null,
         ];
 
+        // ── Restrições por perfil ──────────────────────────────────────
+        if ($role === 'gestor') {
+            // Gestor só vê sua própria unidade, independente do filtro enviado
+            $filters['unidade_id'] = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        } elseif ($role === 'user') {
+            // Usuário comum só vê sua própria unidade
+            // (a view de colaboradores é separada, mas protegemos aqui também)
+            $filters['unidade_id'] = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        } elseif ($role !== 'admin') {
+            // Role desconhecida: nega acesso
+            http_response_code(403);
+            $this->jsonResponse(['error' => 'Acesso negado.']);
+            return;
+        }
+        // Admin: sem restrição, usa os filtros como vieram
+
         $users = $this->model->listPaginated($page, $limit, $filters);
         $total = $this->model->countFiltered($filters);
 
-        // Formata role e ativo para os badges e pills da interface
-        $formatted = array_map(function (array $user): array {
+        $formatted = array_map(function (array $user) use ($role, $sessionId): array {
             return [
                 'id'            => $user['id'],
-                'servidor_id'   => $user['servidor_id'] ? (int) $user['servidor_id'] : null, // ← adicionar
+                'servidor_id'   => $user['servidor_id'] ? (int) $user['servidor_id'] : null,
                 'nome'          => $user['nome'],
                 'email'         => $user['email'],
                 'perfil'        => $this->formatRole($user['role']),
                 'perfil_raw'    => $user['role'],
                 'unidade'       => $user['unidade'],
+                'unidade_id'    => $user['unidade_id'] ?? null, // ← necessário para o JS
                 'situacao'      => $user['situacao'],
                 'situacao_label'=> $this->formatSituacao($user['situacao']),
                 'status_raw'    => $user['ativo'],
                 'data_cadastro' => $user['data_cadastro'],
+                // Flag que diz ao frontend se pode editar este usuário
+                'pode_editar'   => $this->podeEditar($role, $user, $sessionId),
             ];
         }, $users);
 
@@ -66,6 +88,16 @@ class UserController extends Controller
             'limit'      => $limit,
             'totalPages' => (int) ceil($total / $limit),
         ]);
+    }
+
+    // Adicione este método privado na classe:
+    private function podeEditar(string $role, array $user, int $sessionId): bool
+    {
+        return match ($role) {
+            'admin'  => true,
+            'gestor' => (int) ($user['unidade_id'] ?? 0) === (int) ($_SESSION['user']['unidade_id'] ?? 0),
+            default  => false, // 'user' nunca edita
+        };
     }
 
     public function perfil(): void
@@ -469,16 +501,13 @@ class UserController extends Controller
     public function colaboradores(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['gestor', 'admin']);
-
+        RoleMiddleware::handle(['gestor', 'admin', 'user']);
         $unidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
-
         if (!$unidadeId) {
             http_response_code(422);
             $this->jsonResponse(['error' => 'Unidade não identificada na sessão.']);
             return;
         }
-
         $search   = trim($_GET['search'] ?? '');
         $situacao = trim($_GET['situacao'] ?? '');
         $cargo    = trim($_GET['cargo'] ?? '');
@@ -545,22 +574,23 @@ class UserController extends Controller
 
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
+        $situacao = strtolower(trim($data['situacao'] ?? ''));
+
         $payloadUser = [
-            'nome' => $data['nome'],
-            'email' => $data['email'],
-            'role' => $colaborador['role'],
-            'situacao' => $data['situacao'],
+            'nome'       => $data['nome']  ?? '',
+            'email'      => $data['email'] ?? '',
+            'role'       => $colaborador['role'],
+            'situacao'   => $situacao,
             'unidade_id' => $gestorUnidadeId,
         ];
-
         $payloadServidor = [
-            'nome' => $data['nome'],
-            'cpf' => $data['cpf'] ?? '',
-            'cargo' => $data['cargo'],
-            'situacao' => $data['situacao'],
-            'unidade_id' => $gestorUnidadeId,
-            'data_nascimento' => null,
-            'data_ingresso' => null,
+            'nome'            => $data['nome']  ?? '',
+            'cpf'             => preg_replace('/\D/', '', $colaborador['cpf'] ?? ''),
+            'cargo'           => $colaborador['cargo'] ?? '',
+            'situacao'        => $situacao,
+            'unidade_id'      => $gestorUnidadeId,
+            'data_nascimento' => $data['data_nascimento'] ?? null,
+            'data_ingresso'   => $data['data_ingresso']   ?? null,
         ];
 
         $this->model->update($id, $payloadUser);

@@ -3,10 +3,12 @@
     │   ├── assets/
     │   │   ├── css/
     │   │   │   └── style.css
+    │   │       ├── organograma.css    
     │   │   ├── images/
     │   │   └── js/
     │   │       ├── app.js
     │   │       ├── organograma.js
+    │   │       ├── organograma-gestor.js
     │   │       └── organograma-user.js
     │   ├── .htaccess
     │   ├── favicon.ico
@@ -73,9 +75,10 @@
     │       │
     │       └── layout/
     │       │   ├──partials/
-    │       │   └── modal-perfil-servidor.php
+                   └── modal-perfil-servidor.php
     │       │   ├── footer.php
     │       │   ├── header.php
+    │       │   ├── modal-edicao-colaborador.php
     │       │   └── sidebar.php
     │
     ├── vendor/
