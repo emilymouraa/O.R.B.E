@@ -1525,6 +1525,26 @@ document.addEventListener('click', e => {
     if (modal && e.target === modal) fecharPerfilServidor();
 });
 
+function baixarDocumento(tipo) {
+    if (!_mpsServidorIdAtual) return;
+
+    const urls = {
+        holerite: `${BASE_URL}/api/relatorio/holerite?servidor_id=${_mpsServidorIdAtual}`,
+        espelho:  `${BASE_URL}/api/relatorio/espelho?servidor_id=${_mpsServidorIdAtual}`,
+    };
+
+    const url = urls[tipo];
+    if (!url) return;
+
+    const link = document.createElement('a');
+    link.href     = url;
+    link.target   = '_blank';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 // ── Helpers do modal ─────────────────────────────────────────────
 function mpsAnosServico(dataIngresso) {
     if (!dataIngresso) return null;

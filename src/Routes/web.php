@@ -218,3 +218,23 @@ $router->add('GET', '/api/servidores/{id}/perfil', function () use ($conn) {
 $router->add('GET', '/api/organograma/hierarquia-usuario', function () use ($conn) {
     (new OrganogramaController($conn))->hierarquiaUsuario();
 });
+
+$router->add('POST', '/api/relatorio/preview', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->preview();
+});
+
+$router->add('POST', '/api/relatorio/exportar', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->exportar();
+});
+
+$router->add('POST', '/api/relatorio/exportar-xlsx', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->exportarXlsx();
+});
+
+$router->add('GET', '/api/relatorio/holerite', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->gerarHolerite();
+});
+
+$router->add('GET', '/api/relatorio/espelho', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->gerarEspelho();
+});

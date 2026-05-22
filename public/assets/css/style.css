@@ -122,7 +122,7 @@ body.auth-page .theme-toggle {
 }
 
 [data-theme="dark"] body.auth-page::before {
-    background-color: color-mix(in srgb, var(--bg) 70%, transparent);
+    background-color: color-mix(in srgb, var(--bg) 50%, transparent);
 }
 
 a {
@@ -2736,4 +2736,306 @@ input[type="password"] {
 .btn-edit:focus {
     outline: 2px solid rgba(37, 99, 235, 0.35);
     outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MÓDULO — Exportar Relatório (painel.php)
+   Adicionar ao final de style.css
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Botão "Exportar Relatório" no header do painel ── */
+.btn-exportar-relatorio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: .875rem;
+    cursor: pointer;
+    transition: background .2s, transform .15s;
+    white-space: nowrap;
+}
+.btn-exportar-relatorio:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* ── Overlay do modal ── */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+    z-index: 1000;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 16px;
+    overflow-y: auto;
+    backdrop-filter: blur(2px);
+}
+.modal-overlay.open {
+    display: flex;
+}
+
+/* ── Caixa do modal ── */
+.modal-box--relatorio {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 680px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    display: flex;
+    flex-direction: column;
+    animation: modalIn .22s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0);     }
+}
+
+/* ── Cabeçalho do modal ── */
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.modal-header h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.modal-header h2 i { color: var(--primary); }
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .15s, color .15s;
+}
+.modal-close:hover { background: var(--surface); color: var(--text); }
+
+/* ── Corpo do modal ── */
+.modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    max-height: 62vh;
+}
+
+/* ── Fieldsets de seção ── */
+.rel-fieldset {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+}
+.rel-fieldset legend {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rel-fieldset legend i { color: var(--primary); }
+
+/* ── Grid de campos ── */
+.rel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+.rel-field { display: flex; flex-direction: column; gap: 5px; }
+.rel-field--full { grid-column: 1 / -1; }
+
+.rel-field label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+.rel-field input[type="text"],
+.rel-field input[type="number"],
+.rel-field input[type="date"],
+.rel-field select,
+#rel-role,
+#rel-ordenar {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: .875rem;
+    transition: border-color .15s;
+    width: 100%;
+}
+.rel-field input:focus,
+.rel-field select:focus,
+#rel-role:focus,
+#rel-ordenar:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Select múltiplo de unidades */
+#rel-unidades {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 4px 6px;
+    color: var(--text);
+    font-size: .875rem;
+    width: 100%;
+    transition: border-color .15s;
+}
+#rel-unidades:focus { outline: none; border-color: var(--primary); }
+#rel-unidades option:checked { background: var(--primary-light); color: var(--text); }
+
+.rel-hint {
+    font-size: .73rem;
+    color: var(--muted);
+}
+
+/* ── Faixa de intervalo (min–até–max) ── */
+.rel-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rel-range input { flex: 1; }
+.rel-range span   { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+
+/* ── Grupo de checkboxes ── */
+.rel-checkgroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+.rel-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .85rem;
+    color: var(--text);
+    cursor: pointer;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+}
+.rel-check:hover { border-color: var(--primary); background: var(--primary-light); }
+.rel-check input[type="checkbox"] { accent-color: var(--primary); }
+
+/* ── Subgrupos dentro de configurações ── */
+.rel-subgroup { margin-top: 12px; }
+.rel-sublabel {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* ── Preview de contagem ── */
+.rel-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border-radius: 9px;
+    border: 1px solid var(--border);
+}
+.rel-preview-badge {
+    flex: 1;
+    font-size: .85rem;
+    color: var(--muted);
+    font-style: italic;
+}
+.rel-preview-badge.loading      { color: var(--muted); font-style: normal; }
+.rel-preview-badge.has-results  { color: var(--success); font-weight: 600; font-style: normal; }
+.rel-preview-badge.no-results   { color: var(--danger);  font-weight: 600; font-style: normal; }
+
+.btn-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    white-space: nowrap;
+}
+.btn-preview:hover { border-color: var(--primary); background: var(--primary-light); }
+
+/* ── Rodapé do modal ── */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.btn-secondary {
+    padding: 9px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s;
+}
+.btn-secondary:hover { background: var(--border); }
+
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .6rem 1.25rem;
+    border-radius: .5rem;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #22c55e;
+    background: transparent;
+    color: #22c55e;
+    transition: background .2s, color .2s;
+}
+
+.btn-outline:hover {
+    background: #22c55e;
+    color: #fff;
+}
+
+.btn-outline:disabled {
+    opacity: .6;
+    cursor: not-allowed;
 }

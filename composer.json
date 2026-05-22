@@ -5,7 +5,8 @@
   "require": {
     "php": ">=8.1",
     "ext-pdo": "*",
-    "dompdf/dompdf": "^3.1"
+    "dompdf/dompdf": "^3.1",
+    "phpoffice/phpspreadsheet": "^5.7"
   },
   "autoload": {
     "psr-4": {
@@ -16,6 +17,7 @@
     "start": "C:\\xampp\\php\\php.exe -S localhost:8001 -t public"
   },
   "config": {
-    "process-timeout": 0
+    "process-timeout": 0,
+    "platform-check": false
   }
 }
