@@ -115,11 +115,11 @@ class AuthService {
 
         // Cria os dados completos da sessão do usuário autenticado
         $_SESSION['user'] = [
-            'id'         => $user['id'],
-            'nome'       => $user['nome'],
-            'role'       => $user['role'],
-            'servidor_id'=> $servidor['id'],
-            'unidade_id' => $servidor['unidade_id'],
+            'id'          => $user['id'],
+            'nome'        => $user['nome'],
+            'role'        => $user['role'],
+            'servidor_id' => $servidor['id'],
+            'unidade_id'  => $user['unidade_gestor_id'] ?? $servidor['unidade_id'],
         ];
 
         return ['success' => true];

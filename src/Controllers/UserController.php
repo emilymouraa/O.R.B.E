@@ -17,10 +17,12 @@ class UserController extends Controller
 {
     private UserModel $model;
     private ServidorModel $servidorModel;
+    private \App\Models\NotificacaoModel $notifModel;
 
     public function __construct(\PDO $conn) {
         $this->model         = new UserModel($conn);
         $this->servidorModel = new ServidorModel($conn);
+        $this->notifModel    = new \App\Models\NotificacaoModel($conn);
     }
 
     public function index(): void
@@ -407,7 +409,7 @@ class UserController extends Controller
 
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        $user = $this->model->findById($id);
+        $user = $this->model->findByIdWithUnidade($id);
         if (!$user) {
             http_response_code(404);
             $this->jsonResponse(['error' => 'Usuário não encontrado.']);
@@ -420,10 +422,125 @@ class UserController extends Controller
             return;
         }
 
-        $this->model->update($id, $data);
+        $servidorId       = $user['servidor_id'] ? (int) $user['servidor_id'] : null;
+        $adminId          = (int) ($_SESSION['user']['id'] ?? 0);
+        $novaUnidadeId    = isset($data['unidade_id'])  ? (int) $data['unidade_id']  : null;
+        $novaCargo        = $data['cargo']    ?? null;
+        $novaPatente      = $data['patente']  ?? null;
+        $descricaoCustom  = trim($data['motivo'] ?? $data['descricao'] ?? '');
 
+        $houvTransferencia = $servidorId
+            && $novaUnidadeId
+            && $novaUnidadeId !== (int) ($user['unidade_id'] ?? 0);
+
+        $houvPromocao = $servidorId
+            && (
+                ($novaCargo   && $novaCargo   !== ($user['cargo']   ?? ''))
+             || ($novaPatente && $novaPatente !== ($user['patente'] ?? ''))
+            );
+
+        $this->model->update($id, $data);
         if ($user['servidor_id']) {
             $this->servidorModel->update((int) $user['servidor_id'], $data);
+        }
+
+        if ($servidorId && ($houvTransferencia || $houvPromocao)) {
+            $stmtUid = $this->servidorModel->getDb()->prepare("
+                SELECT id FROM users WHERE servidor_id = :sid LIMIT 1
+            ");
+            $stmtUid->execute(['sid' => $servidorId]);
+            $userIdServidor = (int) $stmtUid->fetchColumn();
+
+            if ($houvTransferencia) {
+                $unidadeDestinoId = $novaUnidadeId ?? (int) ($user['unidade_id'] ?? 0);
+                $stmtT = $this->servidorModel->getDb()->prepare("
+                    INSERT INTO movimentacoes
+                        (servidor_id, unidade_origem_id, unidade_destino_id,
+                         tipo, descricao, motivo, data_inicio, executado_por, executado_at, status)
+                    VALUES
+                        (:servidor_id, :origem, :destino,
+                         'transferencia', :descricao, :motivo, CURRENT_DATE, :exec_por, NOW(), 'executado')
+                    RETURNING id
+                ");
+                $stmtT->execute([
+                    'servidor_id' => $servidorId,
+                    'origem'      => (int) ($user['unidade_id'] ?? $unidadeDestinoId),
+                    'destino'     => $unidadeDestinoId,
+                    'descricao'   => $descricaoCustom ?: null,
+                    'motivo'      => $descricaoCustom ?: null,
+                    'exec_por'    => $adminId,
+                ]);
+                $movIdT = (int) $stmtT->fetchColumn();
+
+                $userIdGestorDestino = null;
+                $stmtG = $this->servidorModel->getDb()->prepare("
+                    SELECT u.id
+                    FROM users u
+                    WHERE u.unidade_gestor_id = :uid AND u.role = 'gestor' AND u.ativo = true
+                    LIMIT 1
+                ");
+                $stmtG->execute(['uid' => $unidadeDestinoId]);
+                $userIdGestorDestino = ($stmtG->fetchColumn()) ?: null;
+                if ($userIdGestorDestino) {
+                    $userIdGestorDestino = (int) $userIdGestorDestino;
+                }
+
+                if ($userIdServidor) {
+                    $this->notifModel->gerarMovimentacao(
+                        $movIdT,
+                        $userIdServidor,
+                        'transferencia',
+                        $descricaoCustom,
+                        $userIdGestorDestino
+                    );
+                }
+            }
+
+            if ($houvPromocao) {
+                $unidadeAtualId = $novaUnidadeId ?? (int) ($user['unidade_id'] ?? 0);
+                $cargoAnteriorLabel = $this->formatCargo($user['cargo']   ?? '');
+                $cargoNovoLabel     = $this->formatCargo($novaCargo ?? $user['cargo'] ?? '');
+                $patenteAnterior    = ucfirst($user['patente']  ?? '');
+                $patenteNova        = ucfirst($novaPatente ?? $user['patente'] ?? '');
+
+                $tituloPromocao = $descricaoCustom ?: trim(
+                    ($cargoAnteriorLabel !== $cargoNovoLabel
+                        ? "{$cargoAnteriorLabel} → {$cargoNovoLabel}"
+                        : '') .
+                    ($patenteAnterior !== $patenteNova
+                        ? ($cargoAnteriorLabel !== $cargoNovoLabel ? ' · ' : '') . "{$patenteAnterior} → {$patenteNova}"
+                        : '')
+                ) ?: 'Promoção de cargo/patente';
+
+                $stmtP = $this->servidorModel->getDb()->prepare("
+                    INSERT INTO movimentacoes
+                        (servidor_id, unidade_origem_id, unidade_destino_id,
+                         tipo, descricao, motivo, data_inicio, executado_por, executado_at, status)
+                    VALUES
+                        (:servidor_id, :origem, :destino,
+                         'promocao', :descricao, :motivo, CURRENT_DATE, :exec_por, NOW(), 'executado')
+                    RETURNING id
+                ");
+                $stmtP->execute([
+                    'servidor_id' => $servidorId,
+                    'origem'      => $unidadeAtualId,
+                    'destino'     => $unidadeAtualId,
+                    'descricao'   => $tituloPromocao,
+                    'motivo'      => $descricaoCustom ?: 'Promoção de cargo/patente.',
+                    'exec_por'    => $adminId,
+                ]);
+                $movIdP = (int) $stmtP->fetchColumn();
+
+                if ($userIdServidor) {
+                    $this->notifModel->gerarMovimentacao(
+                        $movIdP,
+                        $userIdServidor,
+                        'promocao',
+                        $descricaoCustom,
+                        null // Promoções não exigem ID de gestor de destino
+                    );
+                }
+            }
         }
 
         $this->jsonResponse(['success' => true, 'mensagem' => 'Usuário atualizado com sucesso.']);

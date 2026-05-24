@@ -27,6 +27,7 @@ O.R.B.E/
 │   ├── Controllers/
 │   │   ├── AuthController.php
 │   │   ├── BancoTalentosController.php
+│   │   ├── ChatController.php
 │   │   ├── CompetenciaController.php
 │   │   ├── NotificacaoController.php
 │   │   ├── OrganogramaController.php
@@ -53,6 +54,7 @@ O.R.B.E/
 │   │
 │   ├── Models/
 │   │   ├── BancoTalentosModel.php
+│   │   ├── ChatModel.php
 │   │   ├── CompetenciaModel.php
 │   │   ├── LogModel.php
 │   │   ├── NotificacaoModel.php

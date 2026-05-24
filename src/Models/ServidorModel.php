@@ -31,6 +31,11 @@ class ServidorModel extends Model {
         return $servidor ?: null;
     }
 
+    public function getDb(): \PDO
+    {
+        return $this->db;
+    }
+
     public function create(array $data): int {
 
         $stmt = $this->db->prepare("
