@@ -200,4 +200,89 @@ class PainelController extends Controller
             'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)
         ]);
     }
+
+    public function mapa(): void
+    {
+        AuthMiddleware::handle();
+
+        $role = $_SESSION['user']['role'];
+        $unidadeId = $_SESSION['user']['unidade_id'] ?? null;
+        $usuarioServidorId = $_SESSION['user']['servidor_id'] ?? null;
+
+        $sql = "
+            SELECT
+                s.id,
+                s.nome,
+                s.patente,
+                s.cargo,
+                s.unidade_id,
+                u.nome AS unidade,
+                u.sigla,
+                u.id AS unidade_base_id,
+                p.cidade,
+                p.latitude,
+                p.longitude,
+                p.status,
+                us.role
+            FROM plantoes p
+
+            INNER JOIN servidores s
+                ON s.id = p.servidor_id
+
+            INNER JOIN unidades u
+                ON u.id = s.unidade_id
+
+            INNER JOIN users us
+                ON us.servidor_id = s.id
+
+            WHERE p.status = 'ativo'
+        ";
+
+        $params = [];
+
+        // ADMIN:
+        // vê somente:
+        // - ele mesmo
+        // - gestores
+        if ($role === 'admin') {
+
+            $sql .= "
+                AND (
+                    us.role IN ('admin', 'gestor', 'user')
+                )
+            ";
+        }
+
+        // GESTOR:
+        // vê:
+        // - ele mesmo
+        // - colaboradores da mesma unidade
+        if ($role === 'gestor') {
+
+            $sql .= "
+                AND (
+                    s.unidade_id = :unidade_id
+                )
+            ";
+
+            $params['unidade_id'] = $unidadeId;
+        }
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+
+        $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($dados as &$item) {
+
+        $numeroImagem = $item['unidade_base_id'];
+
+        $item['imagem_base'] =
+            "/assets/images/unidade{$numeroImagem}.png";
+    }
+
+        $this->jsonResponse([
+            'data' => $dados
+        ]);
+    }
 }

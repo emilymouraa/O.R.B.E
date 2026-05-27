@@ -91,6 +91,30 @@ require __DIR__ . '/../layout/sidebar.php';
             </div>
         </div>
     </section>
+        <section class="painel-mapa">
+        <div class="painel-grafico-card">
+            <h2 class="painel-grafico-titulo">
+                <i class="fas fa-map-location-dot"></i>
+                Monitoramento Operacional no Piauí
+            </h2>
+
+            <div class="painel-grafico-loading" id="loading-mapa">
+                <i class="fas fa-spinner fa-spin"></i> Carregando mapa...
+            </div>
+
+            <div id="mapa-piaui" style="height: 650px; border-radius: 18px; overflow: hidden; display:none;"></div>
+
+            <div id="sidebar-unidade" class="sidebar-unidade">
+
+                <button class="sidebar-close" id="fechar-sidebar">
+                    ✕
+                </button>
+
+                <div id="sidebar-conteudo"></div>
+
+            </div>
+        </div>
+    </section>
 
     <button class="btn-theme-fixed" onclick="toggleTheme()" id="btnTema" title="Alternar tema">🌙</button>
 </div>
@@ -276,4 +300,17 @@ require __DIR__ . '/../layout/sidebar.php';
 <?php endif; ?>
 
 <script src="/assets/js/relatorio.js"></script>
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    window.USER_ROLE = "<?= $_SESSION['user']['role'] ?? 'user' ?>";
+</script>
+
+<script src="/assets/js/mapa-piaui.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>
