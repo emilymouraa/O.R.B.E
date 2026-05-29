@@ -26,7 +26,7 @@ class UnidadeController extends Controller
     public function index(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['admin']);
+        RoleMiddleware::handle(['admin', 'gestor']);
 
         $stmt = $this->conn->prepare("
             SELECT id, nome

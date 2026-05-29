@@ -21,6 +21,72 @@ async function carregarAdmin() {
   const json     = await response.json();
   _adminData     = json.data;
   renderOrganograma(_adminData);
+
+  // Restaura estado salvo sem animações
+  const est = StateManager.load('/organograma');
+  if (est?.gestoresExpanded) {
+    await _restaurarEstadoSemAnimacao(est);
+  }
+}
+
+async function _restaurarEstadoSemAnimacao(est) {
+  const tree       = document.getElementById("org-tree");
+  const levelGest  = document.getElementById("level-gestores");
+  const levelUsers = document.getElementById("level-usuarios");
+  const adminCard  = document.getElementById(`card-admin-${_adminData.id}`);
+  const badge      = adminCard?.querySelector(".expand-badge");
+  _gestoresExpanded = true;
+  tree.classList.add("expanded");
+  if (badge) badge.textContent = "−";
+
+  StateManager.save('/organograma', {
+    gestoresExpanded: true,
+    expandedGestorId: null,
+  });
+
+  const gestores = _adminData.children;
+  levelGest.innerHTML = gestores.map((g, i) => `
+    <div class="org-node" id="node-gestor-${g.id}">
+      ${cardHTML(g, "gestor")}
+    </div>
+  `).join("");
+  levelGest.classList.remove("hidden");
+
+  gestores.forEach(g => {
+    document.getElementById(`card-gestor-${g.id}`)
+      ?.addEventListener("click", () => toggleUsers(g.id));
+  });
+  if (est.expandedGestorId !== null) {
+    const gestorId   = est.expandedGestorId;
+    const gestorCard = document.getElementById(`card-gestor-${gestorId}`);
+    const gBadge     = gestorCard?.querySelector(".expand-badge");
+
+    _expandedGestorId = gestorId;
+    gestorCard?.classList.add("expanded");
+    if (gBadge) gBadge.textContent = "−";
+
+    const res   = await fetch(`/api/organograma/hierarquia-usuarios/gestor?gestor_id=${gestorId}`);
+    const json  = await res.json();
+    const users = json.data.children;
+
+    levelUsers.innerHTML = users.map(u => `
+      <div class="org-node" id="node-user-${u.id}">
+        ${cardHTML(u, "user")}
+      </div>
+    `).join("");
+    levelUsers.classList.remove("hidden");
+  }
+  setTimeout(() => {
+    atualizarSVGSize();
+    desenharLinhasParaGestores();
+    if (_expandedGestorId !== null) {
+      const levU  = document.getElementById("level-usuarios");
+      const users = Array.from(levU.querySelectorAll(".org-node")).map(n => ({
+        id: parseInt(n.id.replace("node-user-", ""))
+      }));
+      desenharLinhasParaUsuarios(_expandedGestorId, users);
+    }
+  }, 100);
 }
 
 function renderOrganograma(admin) {
@@ -64,6 +130,7 @@ function toggleGestores() {
       tree.classList.remove("expanded");
       if (badge) badge.textContent = "+";
       if (hint) hint.style.display = "block";
+      StateManager.clear('/organograma');
     });
     return;
   }
@@ -109,6 +176,10 @@ async function toggleUsers(gestorId) {
       levelUsers.innerHTML = "";
       _expandedGestorId = null;
       atualizarSVGSize();
+      StateManager.save('/organograma', {
+        gestoresExpanded: true,
+        expandedGestorId: null,
+      });
     }, 300);
     gestorCard?.classList.remove("expanded");
     if (badge) badge.textContent = "+";
@@ -138,7 +209,10 @@ async function toggleUsers(gestorId) {
     </div>
   `).join("");
   levelUsers.classList.remove("hidden");
-
+  StateManager.save('/organograma', {
+    gestoresExpanded: true,
+    expandedGestorId: gestorId,
+  });
   setTimeout(() => {
     atualizarSVGSize();
     desenharLinhasParaUsuarios(gestorId, users);
@@ -323,30 +397,26 @@ function iniciarZoom() {
   const root    = document.getElementById("organograma-root");
   const wrapper = document.getElementById("org-zoom-wrapper");
   let scale     = 1;
-  const MIN = 0.25, MAX = 2.5, STEP = 0.1;
+  const MIN = 0.25, MAX = 2.5, STEP = 0.15;
 
   function aplicar(novo) {
-    scale = Math.min(MAX, Math.max(MIN, +novo.toFixed(2)));
+    scale  = Math.min(MAX, Math.max(MIN, +novo.toFixed(2)));
     _scale = scale;
-    wrapper.style.transform = `scale(${scale})`;
+    wrapper.style.transform       = `scale(${scale})`;
+    wrapper.style.transformOrigin = "top center";
     root.style.height = (wrapper.scrollHeight * scale) + "px";
   }
 
-  root.addEventListener("wheel", e => {
-    e.preventDefault();
-    aplicar(scale + (e.deltaY < 0 ? STEP : -STEP));
-  }, { passive: false });
+  if (!document.getElementById("org-zoom-controls")) {
+    const controls = document.createElement("div");
+    controls.id = "org-zoom-controls";
+    controls.innerHTML = `
+      <button id="btn-zoom-in"  title="Aproximar">+</button>
+      <button id="btn-zoom-out" title="Afastar">−</button>
+    `;
+    root.appendChild(controls);
+  }
 
-  let lastDist = null;
-  root.addEventListener("touchmove", e => {
-    if (e.touches.length !== 2) return;
-    e.preventDefault();
-    const dx   = e.touches[0].clientX - e.touches[1].clientX;
-    const dy   = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    if (lastDist) aplicar(scale * (dist / lastDist));
-    lastDist = dist;
-  }, { passive: false });
-
-  root.addEventListener("touchend", () => { lastDist = null; });
+  document.getElementById("btn-zoom-in") .addEventListener("click", () => aplicar(scale + STEP));
+  document.getElementById("btn-zoom-out").addEventListener("click", () => aplicar(scale - STEP));
 }
