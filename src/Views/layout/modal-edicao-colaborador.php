@@ -119,6 +119,10 @@
             <div id="feedbackEdicao" class="feedback-msg"></div>
             <div class="form-actions">
                 <button type="button" class="btn-cancel" onclick="closeModalEdicao()">Cancelar</button>
+                <button type="button" class="btn-cancel" id="btnRejeitarChamado"
+                    style="display:none;background:#ef4444;color:#fff;border:none">
+                    <i class="fas fa-times"></i> Rejeitar Chamado
+                </button>
                 <button type="submit" class="btn-save" id="btnSalvarEdicao">
                     <i class="fas fa-save"></i> Salvar Alterações
                 </button>

@@ -199,24 +199,27 @@ class UserModel extends Model
             'id' => $userId
         ]);
     }
-    /* Verifica se já existe um gestor na unidade informada. O $excludeUserId evita falso positivo ao editar o próprio gestor. */
+
     public function hasGestorInUnidade(int $unidadeId, ?int $excludeUserId = null): bool
     {
         $sql = "
-            SELECT COUNT(*) FROM {$this->table}
-            WHERE role = 'gestor'
-              AND unidade_gestor_id = :unidade_id
+            SELECT COUNT(*) FROM {$this->table} u
+            INNER JOIN servidores s ON s.id = u.servidor_id
+            WHERE u.role = 'gestor'
+            AND u.unidade_gestor_id = :unidade_id
+            AND u.ativo = true
+            AND s.situacao = 'ativo'  -- ← ADICIONE ESTA LINHA
         ";
         $params = ['unidade_id' => $unidadeId];
         if ($excludeUserId !== null) {
-            $sql .= " AND id != :exclude_id";
+            $sql .= " AND u.id != :exclude_id";
             $params['exclude_id'] = $excludeUserId;
         }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn() > 0;
     }
-    /* Atualiza dados do usuário em users. O campo ativo é derivado da situacao: só 'ativo' = true. */
+
     public function update(int $userId, array $data): bool
     {
         $ativo = ($data['situacao'] === 'ativo');
@@ -289,10 +292,13 @@ class UserModel extends Model
         $sql = "
             SELECT
                 u.id,
+                u.servidor_id, 
                 u.nome,
                 u.email,
+                u.role,
                 s.cargo,
                 s.situacao,
+                s.foto_url, 
                 un.nome  AS unidade,
                 un.sigla AS unidade_sigla
             FROM users u

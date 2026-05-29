@@ -261,10 +261,10 @@ class ChatModel extends Model
     public function getSolicitacoesPendentes(int $userId, string $role): array
     {
         if ($role === 'admin') {
-            $where = "st.status NOT IN ('executado', 'cancelado')
+            $where = "st.status NOT IN ('cancelado')
                     AND st.aprovado_admin_at IS NULL";
         } else {
-            $where = "st.status NOT IN ('executado', 'cancelado')
+            $where = "st.status NOT IN ('cancelado')
                     AND (
                         st.solicitante_user_id = :uid_extra
                         OR (st.gestor_destino_user_id = :uid_extra2

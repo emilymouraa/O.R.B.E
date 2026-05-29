@@ -57,6 +57,7 @@ class CompetenciaController extends Controller
         $servidorId = (int) ($user['servidor_id'] ?? 0);
         if (!$servidorId) {
             $this->jsonResponse(['error' => 'Servidor não vinculado.'], 400);
+            return;
         }
 
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -73,11 +74,13 @@ class CompetenciaController extends Controller
 
         if (!$nome || !$tipo) {
             $this->jsonResponse(['error' => 'Nome e tipo são obrigatórios.'], 422);
+            return;
         }
 
         $tiposValidos = ['curso', 'certificacao', 'especializacao', 'habilidade'];
         if (!in_array($tipo, $tiposValidos, true)) {
             $this->jsonResponse(['error' => 'Tipo inválido.'], 422);
+            return;
         }
 
         $id = $this->model->criar([
@@ -94,6 +97,7 @@ class CompetenciaController extends Controller
 
         if (!$id) {
             $this->jsonResponse(['error' => 'Erro ao salvar competência.'], 500);
+            return;
         }
 
         $this->jsonResponse([

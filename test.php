@@ -1,13 +1,21 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-try {
-    $pdo = new PDO(
-        "pgsql:host=aws-1-sa-east-1.pooler.supabase.com;port=6543;dbname=postgres;sslmode=require",
-        "postgres.jbmjbkzmldemsnuzrgou",
-        "Orbe@2026%5ADS"
-    );
+require __DIR__ . '/vendor/autoload.php';
+App\Core\Env::load(__DIR__ . '/.env');
+$conn = App\Core\Database::getConnection();
+$m = new App\Models\ServidorModel($conn);
+var_dump($m->getNextRa());
 
-    echo "Conectou!";
-} catch (PDOException $e) {
-    echo $e->getMessage();
-}
+$id = $m->create([
+    'ra'              => 'PRF99998',
+    'nome'            => 'Teste Debug',
+    'cpf'             => '00000000000',
+    'data_nascimento' => '1990-01-01',
+    'data_ingresso'   => date('Y-m-d'),
+    'cargo'           => '3a_classe',
+    'unidade_id'      => 1,
+    'situacao'        => 'ativo',
+]);
+var_dump($id);

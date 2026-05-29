@@ -325,3 +325,6 @@ $router->add('POST', '/api/chamados/{id}/rejeitar', function () use ($conn) {
 $router->add('GET', '/api/painel/mapa', function () use ($conn) {
     (new PainelController($conn))->mapa();
 });
+$router->add('PUT', '/api/chamados/{id}/concluir', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->concluir((int) $_GET['id']);
+});

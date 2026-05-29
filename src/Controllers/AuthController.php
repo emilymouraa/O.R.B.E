@@ -78,7 +78,7 @@ class AuthController extends Controller
      *   data_admissao   date    opcional (YYYY-MM-DD)
      */
     public function register(): void
-    {
+    {   
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -94,7 +94,7 @@ class AuthController extends Controller
         $cpf            = trim($_POST['cpf']             ?? '');
         $cargo          = trim($_POST['cargo']           ?? '');
         $unidadeId      = (int) ($_POST['unidade_id']   ?? 0) ?: null;
-        $status         = trim($_POST['status']          ?? 'ativo');
+        $status         = trim($_POST['situacao']          ?? 'ativo');
         $dataNascimento = trim($_POST['data_nascimento'] ?? '') ?: null;
         $dataAdmissao   = trim($_POST['data_admissao']   ?? '') ?: null;
 

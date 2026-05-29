@@ -143,6 +143,7 @@ class CompetenciaModel extends Model
             return $id;
         } catch (\Exception $e) {
             $this->db->rollBack();
+            error_log("Erro ao criar competencia: " . $e->getMessage());
             return null;
         }
     }

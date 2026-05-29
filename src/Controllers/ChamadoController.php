@@ -31,25 +31,22 @@ class ChamadoController extends Controller
             return;
         }
 
-        $nome           = trim($data['nome']            ?? '');
-        $email          = trim($data['email']           ?? '');
-        $dataNascimento = trim($data['data_nascimento'] ?? '');
-        $motivo         = trim($data['motivo']          ?? '');
+        $motivo = trim($data['motivo'] ?? '');
 
-        if (!$nome && !$email && !$dataNascimento) {
+        if (!$motivo) {
             http_response_code(422);
-            $this->jsonResponse(['error' => 'Informe ao menos um campo para alterar.']);
+            $this->jsonResponse(['error' => 'Descreva o que precisa ser alterado.']);
             return;
         }
 
-        $chamadoId = $this->model->criar($userId, $nome, $email, $dataNascimento, $motivo);
+        $chamadoId = $this->model->criar($userId, null, null, null, $motivo);
 
         // Notifica aprovador
         $notif  = new NotificacaoModel($this->conn);
         $role   = $_SESSION['user']['role'] ?? 'user';
         $nomeUser = $_SESSION['user']['nome'] ?? 'Servidor';
 
-        if ($role === 'user') {
+        if ($role === 'user') { 
             // Notifica gestor da unidade
             $unidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
             $stmt = $this->conn->prepare("
@@ -128,7 +125,6 @@ class ChamadoController extends Controller
         $this->jsonResponse(['data' => $chamado]);
     }
 
-    /** POST /api/chamados/{id}/concluir — aprova e edita */
     public function concluir(int $id): void
     {
         AuthMiddleware::handle();
@@ -148,42 +144,30 @@ class ChamadoController extends Controller
             return;
         }
 
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
-        $obs  = trim($data['observacao'] ?? '');
+        if ($chamado['status'] !== 'pendente') {
+            http_response_code(409);
+            $this->jsonResponse(['error' => 'Chamado já foi processado.']);
+            return;
+        }
 
-        // Aplica as alterações no usuário/servidor
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
         $userModel     = new UserModel($this->conn);
         $servidorModel = new ServidorModel($this->conn);
 
-        $payload = [];
-        if (!empty($chamado['nome_solicitado']))
-            $payload['nome'] = $chamado['nome_solicitado'];
-        if (!empty($chamado['email_solicitado']))
-            $payload['email'] = $chamado['email_solicitado'];
-
-        if (!empty($payload)) {
-            $userModel->updatePerfil((int) $chamado['user_id'], array_merge([
-                'nome'  => $chamado['user_nome'],
-                'email' => $chamado['user_email'],
-            ], $payload));
+        $userModel->update((int) $chamado['user_id'], $data);
+        if ($chamado['servidor_id']) {
+            $servidorModel->update((int) $chamado['servidor_id'], $data);
         }
 
-        if (!empty($chamado['data_nascimento_solicitada'])) {
-            $servidorModel->updateDataNascimento(
-                (int) $chamado['servidor_id'],
-                $chamado['data_nascimento_solicitada']
-            );
-        }
+        $this->model->concluir($id, $userId, '');
 
-        $this->model->concluir($id, $userId, $obs);
-
-        // Notifica solicitante
         $notif = new NotificacaoModel($this->conn);
         $notif->criar(
             (int) $chamado['solicitante_user_id'],
             'aviso_gestor',
             'Chamado de edição concluído',
-            'Seus dados pessoais foram atualizados conforme solicitado.' . ($obs ? " Obs: {$obs}" : ''),
+            'Seus dados pessoais foram atualizados conforme solicitado.',
             $id,
             'chamados_edicao'
         );
@@ -191,7 +175,6 @@ class ChamadoController extends Controller
         $this->jsonResponse(['success' => true]);
     }
 
-    /** POST /api/chamados/{id}/rejeitar */
     public function rejeitar(int $id): void
     {
         AuthMiddleware::handle();

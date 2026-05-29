@@ -8,10 +8,12 @@ namespace App\Services;
 
 use App\Models\UserModel;
 use App\Models\ServidorModel;
+use App\Models\NotificacaoModel;
 
 class AuthService {
     private UserModel $userModel;
     private ServidorModel $servidorModel;
+    private NotificacaoModel $notificacaoModel;
 
     // Senha padrão definida para todos os novos servidores cadastrados pelo admin.
     private const SENHA_PADRAO = 'Teste123';
@@ -19,6 +21,8 @@ class AuthService {
     public function __construct(UserModel $userModel, ServidorModel $servidorModel) {
         $this->userModel = $userModel;
         $this->servidorModel = $servidorModel;
+        $db = \App\Core\Database::getConnection();
+        $this->notificacaoModel = new NotificacaoModel($db);
     }
 
     public function register(
@@ -60,19 +64,44 @@ class AuthService {
             'data_ingresso'   => $dataAdmissao   ?? date('Y-m-d'),
             'cargo'           => $cargo ?: 'Não informado',
             'unidade_id'      => $unidadeId ?? 1,
+            'situacao'        => $status,
         ]);
 
         // Hash da senha padrão
         $hash = password_hash(self::SENHA_PADRAO, PASSWORD_DEFAULT);
+        $cargoParaRole = [
+            'chefe_divisao' => 'gestor',
+            'diretor_geral' => 'admin',
+        ];
+        if (isset($cargoParaRole[$cargo])) {
+            $role = $cargoParaRole[$cargo];
+        }
 
         // Cria usuário vinculado ao servidor
         $this->userModel->create([
-            'servidor_id' => $servidorId,
-            'nome'        => $name,
-            'email'       => $email,
-            'password'    => $hash,
-            'role'        => $role,
+            'servidor_id'       => $servidorId,
+            'nome'              => $name,
+            'email'             => $email,
+            'password'          => $hash,
+            'role'              => $role,
+            'unidade_gestor_id' => $unidadeId,
         ]);
+
+        $novoUser = $this->userModel->findByEmail($email);
+        if ($novoUser) {
+            $this->notificacaoModel->criar(
+                (int) $novoUser['id'],
+                'aviso_gestor',
+                'Bem-vindo(a) ao ORBE!',
+                "Olá, {$name}! Seu acesso foi criado. Use o RA {$ra} para entrar pela primeira vez.",
+            );
+        }
+
+        return [
+            'success' => true,
+            'ra'      => $ra,
+            'senha'   => self::SENHA_PADRAO,
+        ];
 
         return [
             'success' => true,
@@ -206,11 +235,16 @@ class AuthService {
         if (!$user) {
             return ['error' => 'Usuário não encontrado'];
         }
-
+        
         $hash = password_hash($password, PASSWORD_DEFAULT);
-
         $this->userModel->updatePassword($user['id'], $hash);
 
+        $this->notificacaoModel->criar(
+            (int) $user['id'],
+            'aviso_gestor',
+            'Acesso configurado com sucesso!',
+            'Sua senha foi definida e seu acesso ao ORBE está pronto. Bem-vindo(a) ao sistema!',
+        );
         return ['success' => true];
     }
 }

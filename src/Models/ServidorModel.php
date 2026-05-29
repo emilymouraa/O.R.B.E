@@ -37,25 +37,25 @@ class ServidorModel extends Model {
     }
 
     public function create(array $data): int {
-
         $stmt = $this->db->prepare("
             INSERT INTO {$this->table}
-            (ra, nome, cpf, data_nascimento, data_ingresso, cargo, unidade_id)
+            (ra, nome, cpf, data_nascimento, data_ingresso, cargo, unidade_id, situacao)
             VALUES
-            (:ra, :nome, :cpf, :data_nascimento, :data_ingresso, :cargo, :unidade_id)
+            (:ra, :nome, :cpf, :data_nascimento, :data_ingresso, :cargo, :unidade_id, :situacao)
+            RETURNING id
         ");
-
         $stmt->execute([
-            'ra' => $data['ra'],
-            'nome' => $data['nome'],
-            'cpf' => $data['cpf'],
+            'ra'              => $data['ra'],
+            'nome'            => $data['nome'],
+            'cpf'             => $data['cpf'],
             'data_nascimento' => $data['data_nascimento'],
-            'data_ingresso' => $data['data_ingresso'],
-            'cargo' => $data['cargo'],
-            'unidade_id' => $data['unidade_id']
+            'data_ingresso'   => $data['data_ingresso'],
+            'cargo'           => $data['cargo'],
+            'unidade_id'      => $data['unidade_id'],
+            'situacao'        => $data['situacao'] ?? 'ativo',
         ]);
-
-        return (int) $this->db->lastInsertId();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return (int) $row['id'];
     }
 
     public function getNextRa(): string {
