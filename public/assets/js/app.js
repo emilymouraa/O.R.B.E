@@ -460,11 +460,31 @@ async function editarUsuario(id, modoGestor = false) {
 
         setFeedbackEdicao('', '');
         document.getElementById('modalEdicao').classList.add('open');
+        const btnRejeitar = document.getElementById('btnRejeitarChamado');
+        if (btnRejeitar) {
+            const chamadoId = document.getElementById('modalEdicao').dataset.chamadoId;
+            if (chamadoId) {
+                btnRejeitar.style.display = 'inline-flex';
+                btnRejeitar.onclick = async () => {
+                    const motivo = prompt('Motivo da rejeição (opcional):') ?? '';
+                    await fetch(`${BASE_URL}/api/chamados/${chamadoId}/rejeitar`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ motivo }),
+                    });
+                    document.getElementById('modalEdicao').dataset.chamadoId = '';
+                    btnRejeitar.style.display = 'none';
+                    closeModalEdicao();
+                };
+            } else {
+                btnRejeitar.style.display = 'none';
+            }
+        }
         document.body.style.overflow = 'hidden';
 
     } catch (err) {
         console.error(err);
-        alert('Não foi possível carregar os dados do usuário.');
+        Toast.error('Erro ao carregar usuário', 'Não foi possível carregar os dados do usuário.');
     }
 }
 
@@ -762,10 +782,13 @@ if (formEdicao) {
         };
 
         try {
-            const modoGestor = document.getElementById('modalEdicao').dataset.modoGestor === '1';
-            const endpoint   = modoGestor
-                ? `${BASE_URL}/api/gestor/colaboradores/${id}`
-                : `${BASE_URL}/api/users/${id}`;
+            const modoGestor  = document.getElementById('modalEdicao').dataset.modoGestor === '1';
+            const chamadoId   = document.getElementById('modalEdicao').dataset.chamadoId;
+            const endpoint    = chamadoId
+                ? `${BASE_URL}/api/chamados/${chamadoId}/concluir`
+                : modoGestor
+                    ? `${BASE_URL}/api/gestor/colaboradores/${id}`
+                    : `${BASE_URL}/api/users/${id}`;
 
             const res  = await fetch(endpoint, {
                 method:  'PUT',
@@ -774,6 +797,7 @@ if (formEdicao) {
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error ?? 'Erro ao salvar.');
+            document.getElementById('modalEdicao').dataset.chamadoId = '';
             closeModalEdicao();
             if (modoGestor && typeof recarregarColaboradores === 'function') {
                 recarregarColaboradores();
@@ -783,6 +807,7 @@ if (formEdicao) {
             Toast.success('Usuário atualizado!', 'As alterações foram salvas com sucesso.');
         } catch (err) {
             setFeedbackEdicao(err.message, 'error');
+            Toast.error('Erro ao salvar', err.message);
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
