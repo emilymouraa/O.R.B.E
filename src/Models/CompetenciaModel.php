@@ -143,6 +143,7 @@ class CompetenciaModel extends Model
             return $id;
         } catch (\Exception $e) {
             $this->db->rollBack();
+            error_log("Erro ao criar competencia: " . $e->getMessage());
             return null;
         }
     }
@@ -168,5 +169,37 @@ class CompetenciaModel extends Model
             WHERE id = :id
         ");
         $stmt->execute(['url' => $url, 'nome' => $nome, 'id' => $id]);
+    }
+
+    // Lista competências de qualquer servidor (uso por admin/gestor)
+    // Admin vê públicas e privadas; gestor vê apenas públicas
+    public function listarPorServidorPublico(int $servidorId, bool $isAdmin = false): array
+    {
+        $filtroVisibilidade = $isAdmin ? '' : "AND sc.visibilidade = 'publica'";
+
+        $stmt = $this->db->prepare("
+            SELECT
+                sc.id,
+                c.nome,
+                c.tipo,
+                sc.instituicao,
+                sc.descricao,
+                sc.carga_horaria,
+                sc.data_conclusao,
+                sc.validade,
+                sc.visibilidade,
+                sc.anexo_url,
+                sc.anexo_nome,
+                sc.created_at,
+                s.nome AS servidor
+            FROM servidor_competencias sc
+            INNER JOIN competencias c ON c.id = sc.competencia_id
+            INNER JOIN servidores s   ON s.id = sc.servidor_id
+            WHERE sc.servidor_id = :servidor_id
+            {$filtroVisibilidade}
+            ORDER BY sc.data_conclusao DESC NULLS LAST
+        ");
+        $stmt->execute(['servidor_id' => $servidorId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

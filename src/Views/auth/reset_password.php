@@ -11,7 +11,7 @@ require __DIR__ . '/../layout/header.php';
 <div class="login-container">
     <div class="login-box">
         <div class="logo-container">
-            <img src="/assets/images/orbe_logo.jpeg" alt="ORBE Logo" class="logo">
+            <img src="/assets/images/orbe_logo.png" alt="ORBE Logo" class="logo">
         </div>
 
         <h2>Redefinir Senha</h2>

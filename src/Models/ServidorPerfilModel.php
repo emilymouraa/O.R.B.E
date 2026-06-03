@@ -19,6 +19,7 @@ class ServidorPerfilModel extends Model
             SELECT
                 s.id,
                 s.ra,
+                s.unidade_id,
                 s.nome,
                 s.cargo,
                 s.patente,

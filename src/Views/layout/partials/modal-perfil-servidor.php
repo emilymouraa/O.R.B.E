@@ -30,6 +30,9 @@
             <button class="mps-tab" data-tab="trajetoria" onclick="mpsAltTab(this, 'trajetoria')">
                 <i class="fas fa-chart-line"></i> Trajetória & Desempenho
             </button>
+            <button class="mps-tab" data-tab="documentos" onclick="mpsAltTab(this, 'documentos')">
+                <i class="fas fa-file-lines"></i> Documentos
+            </button>
         </div>
 
         <div class="mps-loading" id="mpsLoading">
@@ -147,6 +150,44 @@
             </div>
         </div>
 
+        <div class="mps-tab-content" id="mpsTab-documentos" style="display:none;">
+            <div class="mps-subsection">
+                <h3 class="mps-subsection-title">
+                    <i class="fas fa-file-arrow-down"></i> Documentos Disponíveis
+                </h3>
+                <div class="mps-documentos-grid">
+                    <div class="mps-documento-card">
+                        <div class="mps-documento-icon mps-documento-icon--verde">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="mps-documento-info">
+                            <strong>Contracheque</strong>
+                            <span>Holerite do mês atual com vencimentos e descontos</span>
+                        </div>
+                        <button class="mps-documento-btn" onclick="baixarDocumento('holerite')">
+                            <i class="fas fa-download"></i> Baixar PDF
+                        </button>
+                    </div>
+                    <div class="mps-documento-card">
+                        <div class="mps-documento-icon mps-documento-icon--azul">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="mps-documento-info">
+                            <strong>Espelho de Ponto</strong>
+                            <span>Registro de frequência e jornada do mês atual</span>
+                        </div>
+                        <button class="mps-documento-btn" onclick="baixarDocumento('espelho')">
+                            <i class="fas fa-download"></i> Baixar PDF
+                        </button>
+                    </div>
+                </div>
+                <p class="mps-documentos-aviso">
+                    <i class="fas fa-circle-info"></i>
+                    Documentos gerados com dados fictícios para fins de demonstração.
+                </p>
+            </div>
+        </div>
+
         <div class="mps-tab-content" id="mpsTab-trajetoria" style="display:none;">
 
             <div class="mps-subsection">
@@ -193,6 +234,70 @@
             </div>
 
         </div>
-
     </div>
 </div>
+
+<style>
+.mps-documentos-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: .5rem;
+}
+.mps-documento-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    padding: 1rem 1.25rem;
+}
+.mps-documento-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: .6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.mps-documento-icon--verde  { background: rgba(34,197,94,.15);  color: #16a34a; }
+.mps-documento-icon--azul   { background: rgba(59,130,246,.15); color: #1d4ed8; }
+.mps-documento-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+.mps-documento-info strong { font-size: .95rem; color: var(--text); }
+.mps-documento-info span   { font-size: .8rem;  color: var(--muted); }
+.mps-documento-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1.1rem;
+    border-radius: .5rem;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    transition: background .2s, color .2s;
+    white-space: nowrap;
+}
+.mps-documento-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+.mps-documentos-aviso {
+    margin-top: 1rem;
+    font-size: .78rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+</style>

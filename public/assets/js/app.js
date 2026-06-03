@@ -14,17 +14,78 @@ const BASE_URL = window.location.pathname
     .replace(/\/(login|register|dashboard|usuarios|perfil|colaboradores|organograma|competencias|banco-talentos|painel|api).*$/, '')
     .replace(/\/$/, '');
 
+    const StateManager = {
+    _key(rota) {
+        return `orbe_state_${rota}`;
+    },
+    save(rota, dados) {
+        try {
+            sessionStorage.setItem(this._key(rota), JSON.stringify(dados));
+        } catch (e) {
+            console.warn('StateManager.save falhou:', e);
+        }
+    },
+    load(rota) {
+        try {
+            const raw = sessionStorage.getItem(this._key(rota));
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    },
+    clear(rota) {
+        sessionStorage.removeItem(this._key(rota));
+    },
+    clearAll() {
+        Object.keys(sessionStorage)
+            .filter(k => k.startsWith('orbe_state_'))
+            .forEach(k => sessionStorage.removeItem(k));
+    }
+};
+
 // ── Tema ─────────────────────────────────────────────────────────
 function toggleTheme() {
     const html = document.documentElement;
     const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+
     html.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
 
-    // Atualiza ícone do botão fixo
+    // Atualiza botão
     const btn = document.getElementById('btnTema');
     if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+
+    // Atualiza logo
+    atualizarLogoTema(next);
 }
+
+function atualizarLogoTema(theme) {
+    const logo = document.getElementById('logoTema');
+
+    if (!logo) return;
+
+    // Fade out
+    logo.style.opacity = '0';
+
+    setTimeout(() => {
+        logo.src = theme === 'light'
+            ? '/assets/images/orbe_logo3.png'
+            : '/assets/images/orbe_logo4.png';
+
+        logo.style.opacity = '1';
+    }, 80);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnLogout = document.querySelector('form[action="/logout"] button, button[onclick*="logout"], .btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            StateManager.clearAll();
+        });
+    }
+    const saved = localStorage.getItem('theme');
+    atualizarLogoTema(saved || 'dark');
+});
 
 function toggleSenha() {
     const input = document.getElementById('password');
@@ -56,12 +117,41 @@ function toggleConfirmSenha() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const saved = localStorage.getItem('theme');
     if (saved) {
         document.documentElement.setAttribute('data-theme', saved);
         const btn = document.getElementById('btnTema');
         if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+    }
+
+    if (document.getElementById('tabela-body') && window.location.pathname === '/usuarios') {
+        const estadoSalvo = StateManager.load('/usuarios');
+        if (estadoSalvo) {
+            state.search     = estadoSalvo.search     ?? '';
+            state.cargo      = estadoSalvo.cargo      ?? '';
+            state.situacao   = estadoSalvo.situacao   ?? '';
+            state.unidade_id = estadoSalvo.unidade_id ?? '';
+            state.page       = estadoSalvo.page       ?? 1;
+            // Restaura valores nos inputs/selects
+            const inp = document.getElementById('filtro-search');
+            if (inp) inp.value = state.search;
+            const sCargo = document.getElementById('filtro-cargo');
+            if (sCargo) sCargo.value = state.cargo;
+            const sAtivo = document.getElementById('filtro-ativo');
+            if (sAtivo) sAtivo.value = state.situacao;
+            const sUnidade = document.getElementById('filtro-unidade');
+            if (sUnidade) sUnidade.value = state.unidade_id;
+        }
+        await carregarUnidades();
+        await carregarUsuarios();
+        if (estadoSalvo?.unidade_id) {
+            const sUnidade = document.getElementById('filtro-unidade');
+            if (sUnidade) sUnidade.value = estadoSalvo.unidade_id;
+        }
+        if (estadoSalvo?.modalCadastro) {
+            _restaurarCamposModalCadastro(estadoSalvo.modalCadastro);
+        }
     }
 });
 
@@ -70,19 +160,22 @@ const state = {
     page:       1,
     limit:      10,
     search:     '',
-    role:       '',
-    ativo:      '',
+    cargo:      '',
+    situacao:   '',
     unidade_id: ''
 };
 
-// ── Elementos do DOM ─────────────────────────────────────────────
-const tbody       = document.getElementById('tabela-body');
-const paginacao   = document.getElementById('paginacao');
-const contador    = document.getElementById('contador');
-const inputSearch = document.getElementById('filtro-search');
-const selRole     = document.getElementById('filtro-role');
-const selAtivo    = document.getElementById('filtro-ativo');
-const selUnidade  = document.getElementById('filtro-unidade');
+// ── Elementos do DOM — só inicializa na página /usuarios ─────────
+const _naTelaUsuarios = window.location.pathname === '/usuarios';
+const tbody         = _naTelaUsuarios ? document.getElementById('tabela-body')   : null;
+const paginacao     = _naTelaUsuarios ? document.getElementById('paginacao')     : null;
+const contador      = _naTelaUsuarios ? document.getElementById('contador')      : null;
+const inputSearch   = _naTelaUsuarios ? document.getElementById('filtro-search') : null;
+const selCargoAdmin = _naTelaUsuarios ? document.getElementById('filtro-cargo')  : null;
+const selAtivo      = _naTelaUsuarios ? document.getElementById('filtro-ativo')  : null;
+const selUnidade    = _naTelaUsuarios ? document.getElementById('filtro-unidade'): null;
+
+if (!tbody) {}
 
 // ── Helpers de badge e pill ───────────────────────────────────────
 function badgePerfil(perfilRaw, perfilLabel) {
@@ -116,26 +209,31 @@ function renderTabela(users) {
             </tr>`;
         return;
     }
-    tbody.innerHTML = users.map(u => `
-        <tr>
-            <td><span class="link-perfil-servidor" style="cursor:pointer;font-weight:600;" onclick="abrirPerfilServidor(${u.servidor_id})">${u.nome}</span></td>
-            <td>${u.email}</td>
-            <td>${badgePerfil(u.perfil_raw, u.perfil)}</td>
-            <td>${u.unidade ?? '—'}</td>
-            <td>${pillSituacao(u.situacao)}</td>
-            <td>${u.data_cadastro}</td>
-            <td class="actions">
-                <button class="btn-icon btn-edit" title="Editar" onclick="editarUsuario(${u.id})">
-                    <i class="fas fa-pencil-alt"></i>
-                </button>
-                </td>
-            </tr>
-    `).join('');
+
+    tbody.innerHTML = users.map(u => {
+        const acoes = u.pode_editar
+            ? `<button class="btn-acao btn-acao--editar" title="Editar" 
+                onclick="editarUsuario(${u.id})">Editar</button>`
+            : '—';
+
+        return `
+            <tr>
+                <td><span class="link-perfil-servidor" style="cursor:pointer;font-weight:600;"
+                    onclick="abrirPerfilServidor(${u.servidor_id})">${u.nome}</span></td>
+                <td>${u.email}</td>
+                <td>${badgePerfil(u.perfil_raw, u.perfil)}</td>
+                <td>${u.unidade ?? '—'}</td>
+                <td>${pillSituacao(u.situacao)}</td>
+                <td>${u.data_cadastro}</td>
+                <td class="actions">${acoes}</td>
+            </tr>`;
+    }).join('');
 }
 
 // ── Renderiza paginação ───────────────────────────────────────────
 function renderPaginacao(page, totalPages) {
-    if (totalPages <= 1) { paginacao.innerHTML = ''; return; }
+    if (!paginacao) return;
+    if (totalPages <= 1) { paginacao.innerHTML = ''; return; }    if (totalPages <= 1) { paginacao.innerHTML = ''; return; }
 
     let html = `
         <button class="page-link" onclick="irParaPagina(${page - 1})" ${page === 1 ? 'disabled' : ''}>
@@ -168,7 +266,7 @@ async function carregarUsuarios() {
         page:  state.page,
         limit: state.limit,
         ...(state.search     && { search:     state.search }),
-        ...(state.role       && { role:       state.role }),
+        ...(state.cargo      && { cargo:      state.cargo }),
         ...(state.situacao   && { situacao:   state.situacao }),
         ...(state.unidade_id && { unidade_id: state.unidade_id }),
     });
@@ -222,41 +320,74 @@ async function carregarUnidades() {
 // ── Navegação de página ───────────────────────────────────────────
 function irParaPagina(page) {
     state.page = page;
+    _salvarEstadoUsuarios();
     carregarUsuarios();
 }
 
 // ── Filtros com debounce no search ────────────────────────────────
+function _salvarEstadoUsuarios() {
+    if (!document.getElementById('tabela-body')) return;
+    StateManager.save('/usuarios', {
+        search:     state.search,
+        cargo:      state.cargo,
+        situacao:   state.situacao,
+        unidade_id: state.unidade_id,
+        page:       state.page,
+    });
+}
+
 let debounceTimer;
-if (inputSearch && document.getElementById('filtro-role')) {
+if (inputSearch && selCargoAdmin !== undefined) {
     inputSearch.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             state.search = inputSearch.value.trim();
             state.page   = 1;
+            _salvarEstadoUsuarios();
             carregarUsuarios();
         }, 400);
     });
 }
-
-if (selRole) {
-    selRole.addEventListener('change', () => { state.role = selRole.value; state.page = 1; carregarUsuarios(); });
+if (selCargoAdmin) {
+    selCargoAdmin.addEventListener('change', () => {
+        state.cargo = selCargoAdmin.value;
+        state.page  = 1;
+        _salvarEstadoUsuarios();
+        carregarUsuarios();
+    });
 }
 
 if (selAtivo) {
-    selAtivo.addEventListener('change', () => { state.situacao = selAtivo.value; state.page = 1; carregarUsuarios(); });
+    selAtivo.addEventListener('change', () => {
+        state.situacao = selAtivo.value;
+        state.page     = 1;
+        _salvarEstadoUsuarios();
+        carregarUsuarios();
+    });
 }
-
 if (selUnidade) {
-    selUnidade.addEventListener('change', () => { state.unidade_id = selUnidade.value; state.page = 1; carregarUsuarios(); });
+    selUnidade.addEventListener('change', () => {
+        if (window.ORBE_USER?.role === 'admin') {
+            state.unidade_id = selUnidade.value;
+        }
+        state.page = 1;
+        _salvarEstadoUsuarios();
+        carregarUsuarios();
+    });
 }
 
-async function editarUsuario(id) {
+async function editarUsuario(id, modoGestor = false) {
     try {
-        const res = await fetch(`${BASE_URL}/api/users/${id}`);
+        const endpoint = modoGestor
+            ? `${BASE_URL}/api/users/${id}`
+            : `${BASE_URL}/api/users/${id}`;
+
+        const res = await fetch(endpoint);
         if (!res.ok) throw new Error('Erro ao buscar usuário');
         const json = await res.json();
         const u = json.data;
 
+        // Avatar
         const avatarEl = document.getElementById('editAvatar');
         if (u.foto_url) {
             avatarEl.innerHTML = `<img src="${u.foto_url}" alt="${u.nome}" class="perfil-avatar-img">`;
@@ -265,29 +396,95 @@ async function editarUsuario(id) {
                 .filter(Boolean).slice(0, 2)
                 .map(w => w[0].toUpperCase()).join('');
         }
-        document.getElementById('editRA').textContent    = u.ra      ?? '—';
+
+        // Identity card
+        document.getElementById('editRA').textContent    = u.ra       ?? '—';
         document.getElementById('editNome').textContent  = u.nome;
         document.getElementById('editCargo').textContent = u.cargo_raw ?? '—';
+
+        // Campos hidden
         document.getElementById('edit-id').value          = u.id;
         document.getElementById('edit-servidor-id').value = u.servidor_id ?? '';
-        document.getElementById('edit-nome').value      = u.nome;
-        document.getElementById('edit-email').value     = u.email;
-        document.getElementById('edit-cpf').value       = u.cpf ?? '';
-        document.getElementById('edit-cargo').value     = u.cargo_raw   ?? '';
-        document.getElementById('edit-role').value      = u.perfil_raw  ?? 'user';
-        document.getElementById('edit-situacao').value  = u.situacao    ?? 'ativo';
-        document.getElementById('edit-data-nascimento').value      = brParaIso(u.data_nascimento);
-        document.getElementById('edit-data-ingresso').value        = brParaIso(u.data_ingresso);
-        document.getElementById('edit-previsao-aposentadoria').value = brParaIso(u.previsao_aposentadoria);
-        document.getElementById('edit-unidade').value = u.unidade_id ?? '';
+
+        // Campos do form
+        document.getElementById('edit-nome').value                    = u.nome;
+        document.getElementById('edit-email').value                   = u.email;
+        document.getElementById('edit-cpf').value                     = u.cpf        ?? '';
+        document.getElementById('edit-cargo').value                   = u.cargo_raw  ?? '';
+        document.getElementById('edit-role').value                    = u.perfil_raw ?? 'user';
+        document.getElementById('edit-situacao').value                = u.situacao   ?? 'ativo';
+        document.getElementById('edit-data-nascimento').value         = brParaIso(u.data_nascimento);
+        document.getElementById('edit-data-ingresso').value           = brParaIso(u.data_ingresso);
+        document.getElementById('edit-previsao-aposentadoria').value  = brParaIso(u.previsao_aposentadoria);
+        document.getElementById('edit-unidade').value                 = u.unidade_id ?? '';
+
+        document.getElementById('modalEdicao').dataset.modoGestor = modoGestor ? '1' : '0';
+
+        if (!modoGestor) {
+            const est = StateManager.load('/usuarios') ?? {};
+            est.modalEdicaoId = id;
+            StateManager.save('/usuarios', est);
+        }
+        const camposBloqueados = ['edit-cargo', 'edit-role', 'edit-cpf'];
+        camposBloqueados.forEach(campoId => {
+            const el = document.getElementById(campoId);
+            if (modoGestor) {
+                el.setAttribute('disabled', 'disabled');
+                el.style.cursor  = 'not-allowed';
+                el.style.opacity = '0.6';
+            } else {
+                el.removeAttribute('disabled');
+                el.style.cursor  = '';
+                el.style.opacity = '';
+            }
+        });
+
+        const selUnidadeModal = document.getElementById('edit-unidade');
+        if (modoGestor) {
+            const unidadeId    = u.unidade_id ?? '';
+            const unidadeNome  = u.unidade    ?? '—';
+            selUnidadeModal.innerHTML = `<option value="${unidadeId}">${unidadeNome}</option>`;
+            selUnidadeModal.value    = unidadeId;
+            selUnidadeModal.setAttribute('disabled', 'disabled');
+            selUnidadeModal.style.cursor  = 'not-allowed';
+            selUnidadeModal.style.opacity = '0.6';
+        } else {
+            selUnidadeModal.removeAttribute('disabled');
+            selUnidadeModal.style.cursor  = '';
+            selUnidadeModal.style.opacity = '';
+            if (selUnidadeModal.options.length <= 1) {
+                await carregarUnidades();
+            }
+            selUnidadeModal.value = u.unidade_id ?? '';
+        }
 
         setFeedbackEdicao('', '');
         document.getElementById('modalEdicao').classList.add('open');
+        const btnRejeitar = document.getElementById('btnRejeitarChamado');
+        if (btnRejeitar) {
+            const chamadoId = document.getElementById('modalEdicao').dataset.chamadoId;
+            if (chamadoId) {
+                btnRejeitar.style.display = 'inline-flex';
+                btnRejeitar.onclick = async () => {
+                    const motivo = prompt('Motivo da rejeição (opcional):') ?? '';
+                    await fetch(`${BASE_URL}/api/chamados/${chamadoId}/rejeitar`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ motivo }),
+                    });
+                    document.getElementById('modalEdicao').dataset.chamadoId = '';
+                    btnRejeitar.style.display = 'none';
+                    closeModalEdicao();
+                };
+            } else {
+                btnRejeitar.style.display = 'none';
+            }
+        }
         document.body.style.overflow = 'hidden';
 
     } catch (err) {
         console.error(err);
-        alert('Não foi possível carregar os dados do usuário.');
+        Toast.error('Erro ao carregar usuário', 'Não foi possível carregar os dados do usuário.');
     }
 }
 
@@ -315,9 +512,24 @@ function calcularPrevisaoAposentadoria(dataNascimento, dataIngresso) {
 }
 
 function closeModalEdicao() {
+    const est = StateManager.load('/usuarios') ?? {};
+    delete est.modalEdicaoId;
+    StateManager.save('/usuarios', est);
     document.getElementById('modalEdicao').classList.remove('open');
     document.body.style.overflow = '';
     document.getElementById('formEdicao').reset();
+    setFeedbackEdicao('', '');
+}
+
+function dismissModalEdicao() {
+    const id = document.getElementById('edit-id')?.value;
+    if (id) {
+        const est = StateManager.load('/usuarios') ?? {};
+        est.modalEdicaoId = parseInt(id);
+        StateManager.save('/usuarios', est);
+    }
+    document.getElementById('modalEdicao').classList.remove('open');
+    document.body.style.overflow = '';
     setFeedbackEdicao('', '');
 }
 
@@ -364,6 +576,7 @@ function openModal() {
     if (inputDataCad) inputDataCad.value = `${dd}/${mm}/${yyyy}`;
 
     setFeedback('', '');
+    _salvarModalCadastro();
 }
 
 const selCargo = document.getElementById('m-cargo');
@@ -384,9 +597,9 @@ if (selCargo && selPerfil) {
     });
 }
 
-/** Fecha sem resetar*/
 function dismissModal() {
     if (!modal) return;
+    _salvarModalCadastro();
     modal.classList.remove('open');
     document.body.style.overflow = '';
 }
@@ -396,8 +609,12 @@ function closeModal() {
     if (!modal) return;
     modal.classList.remove('open');
     document.body.style.overflow = '';
-    if (formUsuario) formUsuario.reset();
+    modal.querySelector('form')?.reset();
     setFeedback('', '');
+    const est = StateManager.load('/usuarios') ?? {};
+    delete est.modalCadastroAberto;
+    delete est.modalCadastro;
+    StateManager.save('/usuarios', est);
 }
 
 /** Exibe feedback visual no modal */
@@ -546,13 +763,18 @@ if (formEdicao) {
 
         const id = document.getElementById('edit-id').value;
 
+        const modoGestor = document.getElementById('modalEdicao').dataset.modoGestor === '1';
+        const cpfRaw = modoGestor
+            ? null
+            : (document.getElementById('edit-cpf').value || '').replace(/\D/g, '');
+
         const payload = {
             nome:                   document.getElementById('edit-nome').value.trim(),
             email:                  document.getElementById('edit-email').value.trim(),
-            cpf:                    document.getElementById('edit-cpf').value.replace(/\D/g, ''),
+            cpf:                    cpfRaw,
             cargo:                  document.getElementById('edit-cargo').value,
             role:                   document.getElementById('edit-role').value,
-            situacao:               document.getElementById('edit-situacao').value,
+            situacao:               document.getElementById('edit-situacao').value.toLowerCase(),
             unidade_id:             document.getElementById('edit-unidade').value,
             data_nascimento:        document.getElementById('edit-data-nascimento').value || null,
             data_ingresso:          document.getElementById('edit-data-ingresso').value   || null,
@@ -560,20 +782,32 @@ if (formEdicao) {
         };
 
         try {
-            const res  = await fetch(`${BASE_URL}/api/users/${id}`, {
+            const modoGestor  = document.getElementById('modalEdicao').dataset.modoGestor === '1';
+            const chamadoId   = document.getElementById('modalEdicao').dataset.chamadoId;
+            const endpoint    = chamadoId
+                ? `${BASE_URL}/api/chamados/${chamadoId}/concluir`
+                : modoGestor
+                    ? `${BASE_URL}/api/gestor/colaboradores/${id}`
+                    : `${BASE_URL}/api/users/${id}`;
+
+            const res  = await fetch(endpoint, {
                 method:  'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify(payload),
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error ?? 'Erro ao salvar.');
-
+            document.getElementById('modalEdicao').dataset.chamadoId = '';
             closeModalEdicao();
-            carregarUsuarios();
+            if (modoGestor && typeof recarregarColaboradores === 'function') {
+                recarregarColaboradores();
+            } else {
+                carregarUsuarios();
+            }
             Toast.success('Usuário atualizado!', 'As alterações foram salvas com sucesso.');
-
         } catch (err) {
             setFeedbackEdicao(err.message, 'error');
+            Toast.error('Erro ao salvar', err.message);
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
@@ -582,7 +816,7 @@ if (formEdicao) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (tbody && document.getElementById('filtro-role')) {
         carregarUnidades();
         carregarUsuarios();
@@ -651,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const largura  = Math.min(s.pontuacao, 100);
 
         return `
-        <div class="bt-servidor bt-servidor--${cls}">
+        <div class="bt-servidor bt-servidor--${cls}" onclick="window.location.href='/competencias?servidor_id=${s.id}'" style="cursor:pointer">
             <div class="bt-servidor__top">
                 <div class="bt-posicao ${posClass}">${s.posicao}º</div>
                 <div class="bt-avatar"><i class="fas fa-user-shield"></i></div>
@@ -776,13 +1010,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!document.getElementById('bt-lista')) return;
         carregarIndicadores();
         carregarRanking();
-
-        const input     = document.getElementById('bt-search');
-        const btnClear  = document.getElementById('bt-search-clear');
+        const input    = document.getElementById('bt-search');
+        const btnClear = document.getElementById('bt-search-clear');
+        const estBT = StateManager.load('/banco-talentos');
+        if (estBT?.search) {
+            input.value = estBT.search;
+            btnClear.style.display = estBT.search ? 'block' : 'none';
+            carregarRanking().then(() => executarBusca(estBT.search));
+        }
 
         input.addEventListener('input', () => {
             const v = input.value;
             btnClear.style.display = v ? 'block' : 'none';
+            StateManager.save('/banco-talentos', { search: v });
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => executarBusca(v), 350);
         });
@@ -790,6 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnClear.addEventListener('click', () => {
             input.value = '';
             btnClear.style.display = 'none';
+            StateManager.clear('/banco-talentos');
             renderLista(rankingCompleto);
             input.focus();
         });
@@ -819,12 +1060,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function preencheIndicadores(d) {
-        document.getElementById('ind-total').textContent          = fmtNum(d.total_servidores);
-        document.getElementById('ind-crescimento').textContent    = fmtPct(d.crescimento_percentual);
-        document.getElementById('ind-aposentadoria').textContent  = fmtNum(d.proximos_aposentadoria);
-        document.getElementById('ind-capacitacoes').textContent   = fmtNum(d.capacitacoes_ano);
-        document.getElementById('ind-crescimento-cap').textContent = 'crescimento: ' + fmtPct(d.crescimento_capacitacoes);
-        document.getElementById('ind-tempo-medio').textContent    = fmtAnos(d.tempo_medio_servico);
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        setText('ind-total', d.total_servidores);
+        setText('ind-admissoes', d.admissoes_ano ?? 0);
+        setText('ind-aposentadoria', d.proximos_aposentadoria);
+        setText('ind-capacitacoes', d.capacitacoes_ano);
+        setText(
+            'ind-tempo-medio',
+            `${Number(d.tempo_medio_servico).toFixed(1)} anos`
+        );
     }
 
     let chartBarras = null;
@@ -1302,6 +1550,26 @@ document.addEventListener('click', e => {
     if (modal && e.target === modal) fecharPerfilServidor();
 });
 
+function baixarDocumento(tipo) {
+    if (!_mpsServidorIdAtual) return;
+
+    const urls = {
+        holerite: `${BASE_URL}/api/relatorio/holerite?servidor_id=${_mpsServidorIdAtual}`,
+        espelho:  `${BASE_URL}/api/relatorio/espelho?servidor_id=${_mpsServidorIdAtual}`,
+    };
+
+    const url = urls[tipo];
+    if (!url) return;
+
+    const link = document.createElement('a');
+    link.href     = url;
+    link.target   = '_blank';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 // ── Helpers do modal ─────────────────────────────────────────────
 function mpsAnosServico(dataIngresso) {
     if (!dataIngresso) return null;
@@ -1463,3 +1731,57 @@ function mpsFormatarStatusPdi(s) {
     };
     return map[s] ?? s ?? '—';
 }
+
+// ── Preservação do modal de cadastro ─────────────────────────
+function _salvarModalCadastro() {
+    const modalEl = document.getElementById('modalCadastro');
+    if (!modalEl) return;
+    const aberto = modalEl.classList.contains('open');
+    const est = StateManager.load('/usuarios') ?? {};
+    if (aberto) {
+        est.modalCadastro = {
+            nome:              document.getElementById('m-nome')?.value ?? '',
+            email:             document.getElementById('m-email')?.value ?? '',
+            cpf:               document.getElementById('m-cpf')?.value ?? '',
+            cargo:             document.getElementById('m-cargo')?.value ?? '',
+            role:              document.getElementById('m-role')?.value ?? '',
+            unidade_id:        document.getElementById('m-unidade')?.value ?? '',
+            situacao:          document.getElementById('m-status')?.value ?? '',
+            data_nascimento:   document.getElementById('m-data-nascimento')?.value ?? '',
+            data_admissao:     document.getElementById('m-data-admissao')?.value ?? '',
+        };
+    } else {
+        delete est.modalCadastro;
+        delete est.modalCadastroAberto;
+    }
+    StateManager.save('/usuarios', est);
+}
+
+function _restaurarCamposModalCadastro(dados) {
+    if (!document.getElementById('modalCadastro')) return;
+    if (dados.nome)            document.getElementById('m-nome').value            = dados.nome;
+    if (dados.email)           document.getElementById('m-email').value           = dados.email;
+    if (dados.cpf)             document.getElementById('m-cpf').value             = dados.cpf;
+    if (dados.cargo)           document.getElementById('m-cargo').value           = dados.cargo;
+    if (dados.role)            document.getElementById('m-role').value            = dados.role;
+    if (dados.situacao)        document.getElementById('m-status').value          = dados.situacao;
+    if (dados.data_nascimento) document.getElementById('m-data-nascimento').value = dados.data_nascimento;
+    if (dados.data_admissao)   document.getElementById('m-data-admissao').value   = dados.data_admissao;
+    if (dados.unidade_id) {
+        setTimeout(() => {
+            const sel = document.getElementById('m-unidade');
+            if (sel) sel.value = dados.unidade_id;
+        }, 300);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const campos = ['m-nome','m-email','m-cpf','m-cargo','m-role',
+                    'm-unidade','m-status','m-data-nascimento','m-data-admissao'];
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input',  _salvarModalCadastro);
+        el.addEventListener('change', _salvarModalCadastro);
+    });
+});

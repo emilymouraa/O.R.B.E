@@ -23,16 +23,19 @@ class CompetenciaController extends Controller
         $servidorId = (int) ($user['servidor_id'] ?? 0);
         $unidadeId  = (int) ($user['unidade_id']  ?? 0);
 
+        $filtroServidorId = isset($_GET['servidor_id']) ? (int) $_GET['servidor_id'] : null;
+
         if ($role === 'user') {
-            // Usuário comum: só vê as suas próprias
             if (!$servidorId) {
                 $this->jsonResponse(['error' => 'Servidor não vinculado.'], 400);
                 return;
             }
             $dados = $this->model->listarPorServidor($servidorId);
-
         } else {
-            if ($role === 'admin') {
+            if ($filtroServidorId) {
+                $isAdmin = $role === 'admin';
+                $dados = $this->model->listarPorServidorPublico($filtroServidorId, $isAdmin);
+            } elseif ($role === 'admin') {
                 $dados = $this->model->listarTodas();
             } else {
                 if (!$unidadeId) {
@@ -54,6 +57,7 @@ class CompetenciaController extends Controller
         $servidorId = (int) ($user['servidor_id'] ?? 0);
         if (!$servidorId) {
             $this->jsonResponse(['error' => 'Servidor não vinculado.'], 400);
+            return;
         }
 
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -70,11 +74,13 @@ class CompetenciaController extends Controller
 
         if (!$nome || !$tipo) {
             $this->jsonResponse(['error' => 'Nome e tipo são obrigatórios.'], 422);
+            return;
         }
 
         $tiposValidos = ['curso', 'certificacao', 'especializacao', 'habilidade'];
         if (!in_array($tipo, $tiposValidos, true)) {
             $this->jsonResponse(['error' => 'Tipo inválido.'], 422);
+            return;
         }
 
         $id = $this->model->criar([
@@ -91,6 +97,7 @@ class CompetenciaController extends Controller
 
         if (!$id) {
             $this->jsonResponse(['error' => 'Erro ao salvar competência.'], 500);
+            return;
         }
 
         $this->jsonResponse([

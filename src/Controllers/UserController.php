@@ -17,44 +17,68 @@ class UserController extends Controller
 {
     private UserModel $model;
     private ServidorModel $servidorModel;
+    private \App\Models\NotificacaoModel $notifModel;
 
     public function __construct(\PDO $conn) {
         $this->model         = new UserModel($conn);
         $this->servidorModel = new ServidorModel($conn);
+        $this->notifModel    = new \App\Models\NotificacaoModel($conn);
     }
 
     public function index(): void
     {
-        // Protege a rota: deve estar logado e ser admin
         AuthMiddleware::handle();
+
+        $role      = $_SESSION['user']['role']      ?? '';
+        $sessionId = (int) ($_SESSION['user']['id'] ?? 0);
 
         $page  = max(1, (int) ($_GET['page']  ?? 1));
         $limit = min(50, max(1, (int) ($_GET['limit'] ?? 10)));
 
         $filters = [
             'search'     => trim($_GET['search']      ?? ''),
-            'role'       => trim($_GET['role']         ?? ''),
+            'cargo'      => trim($_GET['cargo']        ?? ''),
             'situacao'   => trim($_GET['situacao']     ?? ''),
             'unidade_id' => (int) ($_GET['unidade_id'] ?? 0) ?: null,
         ];
 
+        // ── Restrições por perfil ──────────────────────────────────────
+        if ($role === 'gestor') {
+            // Gestor só vê sua própria unidade, independente do filtro enviado
+            $filters['unidade_id'] = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        } elseif ($role === 'user') {
+            // Usuário comum só vê sua própria unidade
+            // (a view de colaboradores é separada, mas protegemos aqui também)
+            $filters['unidade_id'] = (int) ($_SESSION['user']['unidade_id'] ?? 0);
+
+        } elseif ($role !== 'admin') {
+            // Role desconhecida: nega acesso
+            http_response_code(403);
+            $this->jsonResponse(['error' => 'Acesso negado.']);
+            return;
+        }
+        // Admin: sem restrição, usa os filtros como vieram
+
         $users = $this->model->listPaginated($page, $limit, $filters);
         $total = $this->model->countFiltered($filters);
 
-        // Formata role e ativo para os badges e pills da interface
-        $formatted = array_map(function (array $user): array {
+        $formatted = array_map(function (array $user) use ($role, $sessionId): array {
             return [
                 'id'            => $user['id'],
-                'servidor_id'   => $user['servidor_id'] ? (int) $user['servidor_id'] : null, // ← adicionar
+                'servidor_id'   => $user['servidor_id'] ? (int) $user['servidor_id'] : null,
                 'nome'          => $user['nome'],
                 'email'         => $user['email'],
                 'perfil'        => $this->formatRole($user['role']),
                 'perfil_raw'    => $user['role'],
                 'unidade'       => $user['unidade'],
+                'unidade_id'    => $user['unidade_id'] ?? null, // ← necessário para o JS
                 'situacao'      => $user['situacao'],
                 'situacao_label'=> $this->formatSituacao($user['situacao']),
                 'status_raw'    => $user['ativo'],
                 'data_cadastro' => $user['data_cadastro'],
+                // Flag que diz ao frontend se pode editar este usuário
+                'pode_editar'   => $this->podeEditar($role, $user, $sessionId),
             ];
         }, $users);
 
@@ -66,6 +90,16 @@ class UserController extends Controller
             'limit'      => $limit,
             'totalPages' => (int) ceil($total / $limit),
         ]);
+    }
+
+    // Adicione este método privado na classe:
+    private function podeEditar(string $role, array $user, int $sessionId): bool
+    {
+        return match ($role) {
+            'admin'  => true,
+            'gestor' => (int) ($user['unidade_id'] ?? 0) === (int) ($_SESSION['user']['unidade_id'] ?? 0),
+            default  => false, // 'user' nunca edita
+        };
     }
 
     public function perfil(): void
@@ -165,7 +199,7 @@ class UserController extends Controller
         $fileContent = file_get_contents($file['tmp_name']);
 
         $supabaseUrl    = Env::get('SUPABASE_URL');
-        $supabaseKey    = Env::get('SUPABASE_ANON_KEY');
+        $supabaseKey    = Env::get('SUPABASE_SERVICE_KEY');
         $bucket         = Env::get('SUPABASE_STORAGE_BUCKET', 'avatares');
         $uploadEndpoint = "{$supabaseUrl}/storage/v1/object/{$bucket}/{$fileName}";
  
@@ -355,6 +389,13 @@ class UserController extends Controller
         ]);
 
         $senha = password_hash($data['cpf'], PASSWORD_BCRYPT);
+        $cargoParaRole = [
+            'chefe_divisao' => 'gestor',
+            'diretor_geral' => 'admin',
+        ];
+        if (isset($cargoParaRole[$data['cargo']])) {
+            $data['role'] = $cargoParaRole[$data['cargo']];
+        }
         $this->model->create([
             'servidor_id' => $servidorId,
             'nome'        => $data['nome'],
@@ -369,33 +410,158 @@ class UserController extends Controller
     }
 
     public function update(int $id): void
-    {
-        AuthMiddleware::handle();
-        RoleMiddleware::handle(['admin']);
+        {
+            AuthMiddleware::handle();
+            RoleMiddleware::handle(['admin']);
 
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-        $user = $this->model->findById($id);
-        if (!$user) {
-            http_response_code(404);
-            $this->jsonResponse(['error' => 'Usuário não encontrado.']);
-            return;
+            $user = $this->model->findByIdWithUnidade($id);
+            if (!$user) {
+                http_response_code(404);
+                $this->jsonResponse(['error' => 'Usuário não encontrado.']);
+                return;
+            }
+
+            $servidorId      = $user['servidor_id'] ? (int) $user['servidor_id'] : null;
+            $adminId         = (int) ($_SESSION['user']['id'] ?? 0);
+            $novaUnidadeId   = isset($data['unidade_id']) ? (int) $data['unidade_id'] : null;
+            $novaCargo       = $data['cargo']   ?? null;
+            $novaPatente     = $data['patente'] ?? null;
+            $descricaoCustom = trim($data['motivo'] ?? $data['descricao'] ?? '');
+
+            // ── 1º Promoção automática de role por cargo ──────────────────
+            $cargoParaRole = [
+                'chefe_divisao' => 'gestor',
+                'diretor_geral' => 'admin',
+            ];
+            if (isset($cargoParaRole[$novaCargo])) {
+                $data['role'] = $cargoParaRole[$novaCargo];
+            }
+
+            // ── 2º Verifica gestor duplicado (após definir o role correto) ─
+            if (($data['role'] ?? '') === 'gestor' && $this->model->hasGestorInUnidade((int) ($data['unidade_id'] ?? 0), $id)) {
+                http_response_code(409);
+                $this->jsonResponse(['error' => 'Esta unidade já possui um gestor ativo.']);
+                return;
+            }
+
+            // ── 3º Detecta transferência e promoção ───────────────────────
+            $houvTransferencia = $servidorId
+                && $novaUnidadeId
+                && $novaUnidadeId !== (int) ($user['unidade_id'] ?? 0);
+
+            $houvPromocao = $servidorId
+                && (
+                    ($novaCargo   && $novaCargo   !== ($user['cargo']   ?? ''))
+                || ($novaPatente && $novaPatente !== ($user['patente'] ?? ''))
+                );
+
+            // ── 4º Salva alterações ───────────────────────────────────────
+            $this->model->update($id, $data);
+            if ($user['servidor_id']) {
+                $this->servidorModel->update((int) $user['servidor_id'], $data);
+            }
+
+            // ── 5º Registra movimentações e notificações ──────────────────
+            if ($servidorId && ($houvTransferencia || $houvPromocao)) {
+                $stmtUid = $this->servidorModel->getDb()->prepare("
+                    SELECT id FROM users WHERE servidor_id = :sid LIMIT 1
+                ");
+                $stmtUid->execute(['sid' => $servidorId]);
+                $userIdServidor = (int) $stmtUid->fetchColumn();
+
+                if ($houvTransferencia) {
+                    $unidadeDestinoId = $novaUnidadeId ?? (int) ($user['unidade_id'] ?? 0);
+                    $stmtT = $this->servidorModel->getDb()->prepare("
+                        INSERT INTO movimentacoes
+                            (servidor_id, unidade_origem_id, unidade_destino_id,
+                            tipo, descricao, motivo, data_inicio, executado_por, executado_at, status)
+                        VALUES
+                            (:servidor_id, :origem, :destino,
+                            'transferencia', :descricao, :motivo, CURRENT_DATE, :exec_por, NOW(), 'executado')
+                        RETURNING id
+                    ");
+                    $stmtT->execute([
+                        'servidor_id' => $servidorId,
+                        'origem'      => (int) ($user['unidade_id'] ?? $unidadeDestinoId),
+                        'destino'     => $unidadeDestinoId,
+                        'descricao'   => $descricaoCustom ?: null,
+                        'motivo'      => $descricaoCustom ?: null,
+                        'exec_por'    => $adminId,
+                    ]);
+                    $movIdT = (int) $stmtT->fetchColumn();
+
+                    $stmtG = $this->servidorModel->getDb()->prepare("
+                        SELECT u.id FROM users u
+                        WHERE u.unidade_gestor_id = :uid AND u.role = 'gestor' AND u.ativo = true
+                        LIMIT 1
+                    ");
+                    $stmtG->execute(['uid' => $unidadeDestinoId]);
+                    $userIdGestorDestino = ($stmtG->fetchColumn()) ?: null;
+                    if ($userIdGestorDestino) {
+                        $userIdGestorDestino = (int) $userIdGestorDestino;
+                    }
+
+                    if ($userIdServidor) {
+                        $this->notifModel->gerarMovimentacao(
+                            $movIdT,
+                            $userIdServidor,
+                            'transferencia',
+                            $descricaoCustom,
+                            $userIdGestorDestino
+                        );
+                    }
+                }
+
+                if ($houvPromocao) {
+                    $unidadeAtualId     = $novaUnidadeId ?? (int) ($user['unidade_id'] ?? 0);
+                    $cargoAnteriorLabel = $this->formatCargo($user['cargo'] ?? '');
+                    $cargoNovoLabel     = $this->formatCargo($novaCargo ?? $user['cargo'] ?? '');
+                    $patenteAnterior    = ucfirst($user['patente'] ?? '');
+                    $patenteNova        = ucfirst($novaPatente ?? $user['patente'] ?? '');
+
+                    $tituloPromocao = $descricaoCustom ?: trim(
+                        ($cargoAnteriorLabel !== $cargoNovoLabel
+                            ? "{$cargoAnteriorLabel} → {$cargoNovoLabel}" : '') .
+                        ($patenteAnterior !== $patenteNova
+                            ? ($cargoAnteriorLabel !== $cargoNovoLabel ? ' · ' : '') . "{$patenteAnterior} → {$patenteNova}"
+                            : '')
+                    ) ?: 'Promoção de cargo/patente';
+
+                    $stmtP = $this->servidorModel->getDb()->prepare("
+                        INSERT INTO movimentacoes
+                            (servidor_id, unidade_origem_id, unidade_destino_id,
+                            tipo, descricao, motivo, data_inicio, executado_por, executado_at, status)
+                        VALUES
+                            (:servidor_id, :origem, :destino,
+                            'promocao', :descricao, :motivo, CURRENT_DATE, :exec_por, NOW(), 'executado')
+                        RETURNING id
+                    ");
+                    $stmtP->execute([
+                        'servidor_id' => $servidorId,
+                        'origem'      => $unidadeAtualId,
+                        'destino'     => $unidadeAtualId,
+                        'descricao'   => $tituloPromocao,
+                        'motivo'      => $descricaoCustom ?: 'Promoção de cargo/patente.',
+                        'exec_por'    => $adminId,
+                    ]);
+                    $movIdP = (int) $stmtP->fetchColumn();
+
+                    if ($userIdServidor) {
+                        $this->notifModel->gerarMovimentacao(
+                            $movIdP,
+                            $userIdServidor,
+                            'promocao',
+                            $descricaoCustom,
+                            null
+                        );
+                    }
+                }
+            }
+
+            $this->jsonResponse(['success' => true, 'mensagem' => 'Usuário atualizado com sucesso.']);
         }
-
-        if ($data['role'] === 'gestor' && $this->model->hasGestorInUnidade((int) $data['unidade_id'], $id)) {
-            http_response_code(409);
-            $this->jsonResponse(['error' => 'Esta unidade já possui um gestor.']);
-            return;
-        }
-
-        $this->model->update($id, $data);
-
-        if ($user['servidor_id']) {
-            $this->servidorModel->update((int) $user['servidor_id'], $data);
-        }
-
-        $this->jsonResponse(['success' => true, 'mensagem' => 'Usuário atualizado com sucesso.']);
-    }
 
     private function formatSituacao(string $situacao): string
     {
@@ -469,16 +635,13 @@ class UserController extends Controller
     public function colaboradores(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::handle(['gestor', 'admin']);
-
+        RoleMiddleware::handle(['gestor', 'admin', 'user']);
         $unidadeId = (int) ($_SESSION['user']['unidade_id'] ?? 0);
-
         if (!$unidadeId) {
             http_response_code(422);
             $this->jsonResponse(['error' => 'Unidade não identificada na sessão.']);
             return;
         }
-
         $search   = trim($_GET['search'] ?? '');
         $situacao = trim($_GET['situacao'] ?? '');
         $cargo    = trim($_GET['cargo'] ?? '');
@@ -499,14 +662,16 @@ class UserController extends Controller
         $formatted = array_map(function (array $row): array {
             return [
                 'id'             => $row['id'],
+                'servidor_id'    => $row['servidor_id'] ?? null, // ← adicione também
                 'perfil_raw'     => $row['role'] ?? 'user',
-
                 'nome'           => $row['nome'],
                 'email'          => $row['email'],
                 'cargo'          => $this->formatCargo($row['cargo']),
+                'cargo_label'    => $this->formatCargo($row['cargo']), // ← para o cardHTML
                 'unidade'        => $row['unidade'],
                 'unidade_sigla'  => $row['unidade_sigla'],
                 'situacao'       => $this->formatSituacao($row['situacao']),
+                'avatar'         => $row['foto_url'] ?? null, // ← ADICIONE ESTA LINHA
             ];
         }, $data);
 
@@ -545,22 +710,23 @@ class UserController extends Controller
 
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
+        $situacao = strtolower(trim($data['situacao'] ?? ''));
+
         $payloadUser = [
-            'nome' => $data['nome'],
-            'email' => $data['email'],
-            'role' => $colaborador['role'],
-            'situacao' => $data['situacao'],
+            'nome'       => $data['nome']  ?? '',
+            'email'      => $data['email'] ?? '',
+            'role'       => $colaborador['role'],
+            'situacao'   => $situacao,
             'unidade_id' => $gestorUnidadeId,
         ];
-
         $payloadServidor = [
-            'nome' => $data['nome'],
-            'cpf' => $data['cpf'] ?? '',
-            'cargo' => $data['cargo'],
-            'situacao' => $data['situacao'],
-            'unidade_id' => $gestorUnidadeId,
-            'data_nascimento' => null,
-            'data_ingresso' => null,
+            'nome'            => $data['nome']  ?? '',
+            'cpf'             => preg_replace('/\D/', '', $colaborador['cpf'] ?? ''),
+            'cargo'           => $colaborador['cargo'] ?? '',
+            'situacao'        => $situacao,
+            'unidade_id'      => $gestorUnidadeId,
+            'data_nascimento' => $data['data_nascimento'] ?? null,
+            'data_ingresso'   => $data['data_ingresso']   ?? null,
         ];
 
         $this->model->update($id, $payloadUser);
