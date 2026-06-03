@@ -31,6 +31,17 @@ require __DIR__ . '/../layout/sidebar.php';
         <?php endif; ?>
     </header>
 
+    <div id="banner-filtro-servidor" style="display:none;align-items:center;gap:.75rem;
+        background:var(--surface);border:1px solid var(--border);border-radius:.75rem;
+        padding:.85rem 1.25rem;margin-bottom:1.25rem;font-size:.88rem;color:var(--text)">
+        <i class="fas fa-filter" style="color:var(--primary)"></i>
+        <span>Exibindo competências de: <strong id="banner-nome-servidor"></strong></span>
+        <a href="/competencias" style="margin-left:auto;display:flex;align-items:center;gap:.35rem;
+        color:var(--primary);font-weight:600;text-decoration:none;font-size:.82rem">
+            <i class="fas fa-xmark"></i> Limpar filtro
+        </a>
+    </div>
+
     <!-- ── Cards de resumo ── -->
     <section class="gc-cards">
        <div class="gc-card">
@@ -371,9 +382,7 @@ require __DIR__ . '/../layout/sidebar.php';
 .gc-tipo-icon{width:2.2rem;height:2.2rem;border-radius:.5rem;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
 </style>
 
-<!-- ═══════════════════════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════════════════════ -->
+<?php require __DIR__ . '/../layout/footer.php'; ?>
 <script>
 (function () {
 
@@ -394,8 +403,11 @@ let dadosOriginais = [];
 async function carregar() {
     listEl.innerHTML = '<div class="table-feedback"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
     try {
-        const res  = await fetch('/api/competencias');
-        const json = await res.json();
+        const url  = servidorIdFiltro
+            ? `/api/competencias?servidor_id=${servidorIdFiltro}`
+            : '/api/competencias';
+        const res  = await fetch(url);
+        const json = await res.json();  
         dadosOriginais = json.data ?? [];
         atualizarCards(dadosOriginais);
         renderizar(dadosOriginais);
@@ -523,13 +535,37 @@ function filtrar() {
     renderizar(filtrado);
 }
 
-buscaEl.addEventListener('input', filtrar);
-tipoEl.addEventListener('change', filtrar);
-validadeEl?.addEventListener('change', filtrar);
+const estComp = StateManager.load('/competencias');
+if (estComp) {
+    if (estComp.busca)    buscaEl.value   = estComp.busca;
+    if (estComp.tipo)     tipoEl.value    = estComp.tipo;
+    if (estComp.validade && validadeEl) validadeEl.value = estComp.validade;
+}
 
-// ════════════════════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════════════════════
+const params      = new URLSearchParams(window.location.search);
+const servidorIdFiltro = params.get('servidor_id');
+
+if (servidorIdFiltro) {
+    const banner = document.getElementById('banner-filtro-servidor');
+    banner.style.display = 'flex';
+    carregar().then(() => {
+        const nome = dadosOriginais[0]?.servidor ?? 'Servidor';
+        document.getElementById('banner-nome-servidor').textContent = nome;
+    });
+}
+
+function salvarEstadoComp() {
+    StateManager.save('/competencias', {
+        busca:    buscaEl.value,
+        tipo:     tipoEl.value,
+        validade: validadeEl?.value ?? '',
+    });
+}
+
+buscaEl.addEventListener('input', () => { salvarEstadoComp(); filtrar(); });
+tipoEl.addEventListener('change', () => { salvarEstadoComp(); filtrar(); });
+validadeEl?.addEventListener('change', () => { salvarEstadoComp(); filtrar(); });
+
 function tipoConfig(tipo) {
     const map = {
         curso:         { icon:'fas fa-book-open', cor:'#3b82f6', bg:'#eff6ff', label:'Curso' },
@@ -571,10 +607,14 @@ window.abrirAnexo = function(url) {
     window.open(url, '_blank');
 };
 
-// ════════════════════════════════════════════════════════════
-// MODAL — NOVA COMPETÊNCIA (só user)
-// ════════════════════════════════════════════════════════════
-carregar();
+carregar().then(() => {
+    if (servidorIdFiltro) return;
+    const estComp = StateManager.load('/competencias');
+    if (estComp?.busca || estComp?.tipo || estComp?.validade) {
+        filtrar();
+    }
+});
+
 if (!['user', 'gestor'].includes(ROLE)) { 
     return; 
 }
@@ -582,9 +622,8 @@ if (!['user', 'gestor'].includes(ROLE)) {
 const modal       = document.getElementById('modalCompetencia');
 const form        = document.getElementById('formCompetencia');
 const feedbackEl  = document.getElementById('feedbackComp');
-let   novaCompId  = null; // id retornado após salvar, para upload
+let   novaCompId  = null;
 
-// Abrir / fechar
 document.getElementById('btnNovaCompetencia').addEventListener('click', () => {
     irPasso(1);
     form.reset();
@@ -757,5 +796,3 @@ window.abrirUpload = function(compId) {
 
 })();
 </script>
-
-<?php require __DIR__ . '/../layout/footer.php'; ?>

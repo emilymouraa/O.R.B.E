@@ -1,10 +1,9 @@
 <?php
-/*
- * Arquivo responsável por registrar as rotas web da aplicação.
+/*Arquivo responsável por registrar as rotas web da aplicação.
  * Aqui são associadas URLs e métodos HTTP aos métodos do AuthController,
  * além de conter uma verificação simples de sessão para acesso ao dashboard
- * e as rotas protegidas da API.
- */
+ * e as rotas protegidas da API. */
+
 use App\Controllers\AuthController;
 use App\Controllers\UserController;
 use App\Models\UserModel;
@@ -32,8 +31,6 @@ $router->add('POST', '/login', function () use ($authController) {
     $authController->login();
 });
 
-// GET  exibe a tela de validação.
-// POST processa os dados via fetch e responde em JSON.
 $router->add('GET', '/validar-identidade', function () use ($authController) {
     $authController->showValidateIdentity();
 });
@@ -201,6 +198,22 @@ $router->add('GET', '/api/notificacoes', function () use ($conn) {
     (new \App\Controllers\NotificacaoController($conn))->index();
 });
 
+$router->add('GET', '/api/notificacoes/count', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->count();
+});
+
+$router->add('PATCH', '/api/notificacoes/todas-lidas', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->marcarTodasLidas();
+});
+
+$router->add('POST', '/api/notificacoes/gerar-competencias', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->gerarCompetencias();
+});
+
+$router->add('PATCH', '/api/notificacoes/{id}/lida', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->marcarLida((int) $_GET['id']);
+});
+
 $router->add('GET', '/api/competencias', function () use ($conn) {
     (new \App\Controllers\CompetenciaController($conn))->index();
 });
@@ -217,4 +230,101 @@ $router->add('GET', '/api/servidores/{id}/perfil', function () use ($conn) {
 
 $router->add('GET', '/api/organograma/hierarquia-usuario', function () use ($conn) {
     (new OrganogramaController($conn))->hierarquiaUsuario();
+});
+
+$router->add('POST', '/api/relatorio/preview', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->preview();
+});
+
+$router->add('POST', '/api/relatorio/exportar', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->exportar();
+});
+
+$router->add('POST', '/api/relatorio/exportar-xlsx', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->exportarXlsx();
+});
+
+$router->add('GET', '/api/relatorio/holerite', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->gerarHolerite();
+});
+
+$router->add('GET', '/api/relatorio/espelho', function () use ($conn) {
+    (new \App\Controllers\RelatorioController($conn))->gerarEspelho();
+});
+
+$router->add('GET',  '/api/chat/conversas', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->conversas();
+});
+
+$router->add('POST', '/api/chat/conversas', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->abrirConversa();
+});
+
+$router->add('GET',  '/api/chat/contatos', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->contatos();
+});
+
+$router->add('GET', '/api/chat/conversas/{id}/mensagens', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->mensagens((int) $_GET['id']);
+});
+
+$router->add('POST', '/api/chat/conversas/{id}/mensagens', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->enviar((int) $_GET['id']);
+});
+
+$router->add('GET', '/api/chat/count', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->count();
+});
+
+$router->add('GET', '/api/chat/colaboradores', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->colaboradores();
+});
+
+$router->add('POST', '/api/chat/solicitacao-transferencia', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->solicitarTransferencia();
+});
+
+$router->add('GET',  '/api/chat/solicitacoes', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->solicitacoes();
+});
+
+$router->add('POST', '/api/chat/solicitacoes/{id}/aprovar', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->aprovar((int) $_GET['id']);
+});
+
+$router->add('POST', '/api/chat/solicitacoes/{id}/rejeitar', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->rejeitar((int) $_GET['id']);
+});
+
+$router->add('POST', '/api/chat/solicitacoes/{id}/executar', function () use ($conn) {
+    (new \App\Controllers\ChatController($conn))->executar((int) $_GET['id']);
+});
+
+$router->add('POST', '/api/notificacoes/aviso', function () use ($conn) {
+    (new \App\Controllers\NotificacaoController($conn))->enviarAviso();
+});
+
+$router->add('POST', '/api/chamados', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->store();
+});
+$router->add('GET', '/api/chamados/pendentes', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->pendentes();
+});
+$router->add('GET', '/api/chamados/meus', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->meus();
+});
+$router->add('GET', '/api/chamados/{id}', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->show((int) $_GET['id']);
+});
+$router->add('POST', '/api/chamados/{id}/concluir', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->concluir((int) $_GET['id']);
+});
+$router->add('POST', '/api/chamados/{id}/rejeitar', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->rejeitar((int) $_GET['id']);
+});
+$router->add('GET', '/api/painel/mapa', function () use ($conn) {
+    (new PainelController($conn))->mapa();
+});
+$router->add('PUT', '/api/chamados/{id}/concluir', function () use ($conn) {
+    (new \App\Controllers\ChamadoController($conn))->concluir((int) $_GET['id']);
 });

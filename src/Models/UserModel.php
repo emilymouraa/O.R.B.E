@@ -111,9 +111,9 @@ class UserModel extends Model
             $where .= " AND (u.nome ILIKE :search OR u.email ILIKE :search)";
             $params['search'] = '%' . $filters['search'] . '%';
         }
-        if (!empty($filters['role'])) {
-            $where .= " AND u.role = :role";
-            $params['role'] = $filters['role'];
+        if (!empty($filters['cargo'])) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = $filters['cargo'];
         }
         if (!empty($filters['situacao'])) {
             $where .= " AND s.situacao = :situacao";
@@ -131,7 +131,9 @@ class UserModel extends Model
                 u.email,
                 u.role,
                 u.ativo,
+                u.unidade_gestor_id AS unidade_id,
                 s.situacao,
+                s.cargo,
                 TO_CHAR(u.created_at, 'DD/MM/YYYY') AS data_cadastro,
                 un.nome AS unidade
             FROM users u
@@ -162,16 +164,16 @@ class UserModel extends Model
             $where .= " AND (u.nome ILIKE :search OR u.email ILIKE :search)";
             $params['search'] = '%' . $filters['search'] . '%';
         }
-        if (!empty($filters['role'])) {
-            $where .= " AND u.role = :role";
-            $params['role'] = $filters['role'];
+        if (!empty($filters['cargo'])) {
+            $where .= " AND s.cargo ILIKE :cargo";
+            $params['cargo'] = $filters['cargo'];
         }
         if (!empty($filters['situacao'])) {
             $where .= " AND s.situacao = :situacao";
             $params['situacao'] = $filters['situacao'];
         }
         if (!empty($filters['unidade_id'])) {
-            $where .= " AND s.unidade_id = :unidade_id";
+            $where .= " AND u.unidade_gestor_id = :unidade_id";
             $params['unidade_id'] = (int) $filters['unidade_id'];
         }
         $sql = "
@@ -197,24 +199,27 @@ class UserModel extends Model
             'id' => $userId
         ]);
     }
-    /* Verifica se já existe um gestor na unidade informada. O $excludeUserId evita falso positivo ao editar o próprio gestor. */
+
     public function hasGestorInUnidade(int $unidadeId, ?int $excludeUserId = null): bool
     {
         $sql = "
-            SELECT COUNT(*) FROM {$this->table}
-            WHERE role = 'gestor'
-              AND unidade_gestor_id = :unidade_id
+            SELECT COUNT(*) FROM {$this->table} u
+            INNER JOIN servidores s ON s.id = u.servidor_id
+            WHERE u.role = 'gestor'
+            AND u.unidade_gestor_id = :unidade_id
+            AND u.ativo = true
+            AND s.situacao = 'ativo'  -- ← ADICIONE ESTA LINHA
         ";
         $params = ['unidade_id' => $unidadeId];
         if ($excludeUserId !== null) {
-            $sql .= " AND id != :exclude_id";
+            $sql .= " AND u.id != :exclude_id";
             $params['exclude_id'] = $excludeUserId;
         }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn() > 0;
     }
-    /* Atualiza dados do usuário em users. O campo ativo é derivado da situacao: só 'ativo' = true. */
+
     public function update(int $userId, array $data): bool
     {
         $ativo = ($data['situacao'] === 'ativo');
@@ -287,10 +292,13 @@ class UserModel extends Model
         $sql = "
             SELECT
                 u.id,
+                u.servidor_id, 
                 u.nome,
                 u.email,
+                u.role,
                 s.cargo,
                 s.situacao,
+                s.foto_url, 
                 un.nome  AS unidade,
                 un.sigla AS unidade_sigla
             FROM users u
